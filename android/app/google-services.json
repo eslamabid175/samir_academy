@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "617492442421",
+    "project_id": "samiracademy-524f0",
+    "storage_bucket": "samiracademy-524f0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:617492442421:android:5db9322164b319e7b3f07c",
+        "android_client_info": {
+          "package_name": "com.example.samir_academy"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "617492442421-ijc2dng3redb0p4mn2vratoojs6c7ei9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.samir_academy",
+            "certificate_hash": "7123b2a287259ba10d9c237e27acde5f10601008"
+          }
+        },
+        {
+          "client_id": "617492442421-9tvekvthh5u7vt7g2dd9ojv3vq8ikc86.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-4M2j0XB_BCa1rrckiTSlc_l9_Z2OuzA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "617492442421-9tvekvthh5u7vt7g2dd9ojv3vq8ikc86.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "617492442421-7kjfqv2bri3cjotbhhc0lbag2vt17uo4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.samirAcademy"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

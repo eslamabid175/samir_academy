@@ -1,0 +1,19 @@
+{
+  "welcome": "Welcome to E-Learning",
+  "home": "Home",
+  "my_courses": "My Courses",
+  "bookmarks": "Bookmarks",
+  "settings": "Settings",
+  "privacy_policy": "Privacy Policy",
+  "about_us": "About Us",
+  "logout": "Log Out",
+  "login": "Log In with Google",
+  "enroll": "Enroll",
+  "bookmark": "Bookmark",
+  "course_details": "Course Details",
+  "language": "Language",
+  "dark_mode": "Dark Mode",
+  "add_course": "Add Course",
+  "add_unit": "Add Unit",
+  "add_classroom": "Add Classroom"
+}
