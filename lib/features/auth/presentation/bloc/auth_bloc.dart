@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:samir_academy/features/auth/domain/entities/user_entity.dart';
 import '../../domain/usecases/save_user.dart';
 import '../../domain/usecases/sign_in_with_google.dart';
+import '../../domain/usecases/update_user_admin_status.dart';
 
 part 'auth_events.dart';
 part 'auth_state.dart';
@@ -12,11 +13,16 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final SignInWithGoogle signInWithGoogle;
   final SaveUser saveUser;
+  final UpdateUserAdminStatus updateUserAdminStatus;
 
-  AuthBloc({required this.signInWithGoogle, required this.saveUser})
-      : super(AuthInitial()) {
+  AuthBloc({
+    required this.signInWithGoogle,
+    required this.saveUser,
+    required this.updateUserAdminStatus,
+  }) : super(AuthInitial()) {
     on<SignInWithGoogleEvent>(_onSignInWithGoogle);
     on<LogOutEvent>(_onLogOut);
+    on<UpdateUserAdminStatusEvent>(_onUpdateUserAdminStatus);
   }
 
   Future<void> _onLogOut(LogOutEvent event, Emitter<AuthState> emit) async {
@@ -48,6 +54,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             emit(AuthAuthenticated(user));
           },
         );
+      },
+    );
+  }
+
+  Future<void> _onUpdateUserAdminStatus(
+      UpdateUserAdminStatusEvent event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    final result = await updateUserAdminStatus(UpdateUserAdminStatusParams(
+      userId: event.userId,
+      isAdmin: event.isAdmin,
+    ));
+    await result.fold(
+      (failure) async {
+        emit(AuthError(failure.message));
+      },
+      (_) async {
+        emit(UserAdminStatusUpdated());
       },
     );
   }

@@ -5,14 +5,14 @@ import '../../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> signInWithGoogle();
- // Future<void> signOut();
   Future<void> saveUser(UserModel user);
-
   Future<void> deleteUSer();
+  Future<void> updateUserAdminStatus(String userId, bool isAdmin);
 }
-class AuthRemoteDataSourceImpl implements AuthRemoteDataSource{
-  final FirebaseAuth _firebaseAuth=FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn=GoogleSignIn();
+
+class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
@@ -41,7 +41,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource{
       // طباعة بيانات اليوزر للتأكد
       print('User Info: UID=${user.uid}, Email=${user.email}, Name=${user.displayName}');
 
-      final userModel = UserModel.fromFirebase(user);
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final isAdmin = userDoc.exists ? userDoc['isAdmin'] ?? false : false;
+
+      final userModel = UserModel.fromFirebase(user).copyWith(isAdmin: isAdmin);
       await saveUser(userModel);
       return userModel;
     } on FirebaseAuthException catch (e) {
@@ -73,11 +76,20 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource{
   @override
   Future<void> saveUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.id).set(user.toFirestore(),SetOptions(merge: true),);
+      await _firestore.collection('users').doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
       print('User saved successfully: ${user.toFirestore()}');
     } catch (e) {
       throw Exception(e.toString());
     }
   }
-}
 
+  @override
+  Future<void> updateUserAdminStatus(String userId, bool isAdmin) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({'isAdmin': isAdmin});
+      print('User admin status updated successfully');
+    } catch (e) {
+      throw Exception('Failed to update user admin status: ${e.toString()}');
+    }
+  }
+}
