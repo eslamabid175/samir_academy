@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace "com.example.samir_academy"
-    compileSdk = flutter.compileSdkVersion
+    compileSdkVersion 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -23,9 +23,12 @@ android {
     defaultConfig {
         applicationId "com.example.samir_academy"
         minSdk = 23
-        targetSdk = flutter.targetSdkVersion
+        targetSdkVersion 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders += [
+            enableOnBackInvokedCallback: true
+        ]
     }
 
 

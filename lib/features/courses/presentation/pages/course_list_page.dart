@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/dummy_data.dart';
@@ -97,47 +101,3 @@ class CourseListPage extends StatelessWidget {
     );
   }
 }
-//
-//       BlocConsumer<CourseBloc, CourseState>(
-//         listener: (context, state) {
-//           if (state is CourseError) {
-//             Fluttertoast.showToast(msg: state.message);
-//           }
-//         },
-//         builder: (context, state) {
-//           if (state is CourseLoading) {
-//             return const Center(child: CircularProgressIndicator());
-//           } else if (state is CourseLoaded) {
-//             return ListView.builder(
-//               itemCount: state.courses.length,
-//               itemBuilder: (context, index) {
-//                 final course = state.courses[index];
-//                 return ListTile(
-//                   title: Text(course.title),
-//                   subtitle: Text(course.description),
-//                   onTap: () {
-//                     Navigator.push(
-//                       context,
-//                       MaterialPageRoute(
-//                         builder: (context) => CourseDetailPage(),
-//                      //   builder: (context) => CourseDetailPage(course: course),
-//                       ),
-//                     );
-//                   },
-//                 );
-//               },
-//             );
-//           }
-//           return Center(
-//             child: ElevatedButton(
-//               onPressed: () {
-//                 context.read<CourseBloc>().add(GetCoursesEvent());
-//               },
-//               child: const Text('Load Courses'),
-//             ),
-//           );
-//         },
-//       ),
-//     );
-//   }
-// }
