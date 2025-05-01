@@ -51,6 +51,8 @@ class BookmarksPage extends StatelessWidget {
                   final course = Course(
                     id: courseSnapshot.data!.id,
                     title: courseData['title'],
+                    categoryId: courseData['categoryId'],
+                    imageUrl: courseData['imageUrl'],
                     description: courseData['description'],
                   );
                   return ListTile(

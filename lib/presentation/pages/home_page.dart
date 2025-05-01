@@ -1,28 +1,34 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:carousel_slider/carousel_slider.dart' show CarouselSlider, CarouselOptions;import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:samir_academy/features/courses/presentation/pages/course_list_page.dart';
 import 'package:samir_academy/presentation/pages/settings_page.dart';
 
+import '../../core/utils/dummy_data.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/ui/login_page.dart';
-import '../../features/courses/presentation/bloc/course_bloc.dart';
+import '../../features/courses/domain/entities/category.dart';
 import '../../features/courses/presentation/pages/bookmarks_page.dart';
-import '../../features/courses/presentation/pages/course_detail_page.dart';
 import '../../features/courses/presentation/pages/my_courses_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _currentCarouselIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(title: Text('home'.tr())),
+      appBar: AppBar(title: Text('home'.tr()),elevation: 0,),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -104,139 +110,293 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
-      body: BlocBuilder<CourseBloc, CourseState>(
-        builder: (context, state) {
-          if (state is CourseInitial) {
-            context.read<CourseBloc>().add(GetCoursesEvent());
-          }
-          if (state is CourseLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (state is CourseLoaded) {
-            return GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.75,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CarouselSlider(
+              items: DummyData.carouselImages.map((imageUrl) {
+                return Builder(
+                  builder: (BuildContext context) {
+                    return Container(
+                      width: MediaQuery.of(context).size.width,
+                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        image: DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+              options: CarouselOptions(
+                height: 200.0,
+                autoPlay: true,
+                enlargeCenterPage: true,
+                aspectRatio: 16 / 9,
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enableInfiniteScroll: true,
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                viewportFraction: 0.8,
+                onPageChanged: (index, reason) {
+                  setState(() {
+                    _currentCarouselIndex = index;
+                  });
+                },
               ),
-              itemCount: state.courses.length,
-              itemBuilder: (context, index) {
-                final course = state.courses[index];
-                return Card(
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CourseDetailPage(),
-                     //     builder: (context) => CourseDetailPage(course: course),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Image.network(
-                            'https://via.placeholder.com/150',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            course.title,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                          child: Text(
-                            course.description,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
+        
+            ),
+        
+            // Carousel Indicators
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: DummyData.carouselImages.asMap().entries.map((entry) {
+                return Container(
+                  width: 8.0,
+                  height: 8.0,
+                  margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentCarouselIndex == entry.key
+                        ? Colors.blue
+                        : Colors.grey.withOpacity(0.5),
                   ),
                 );
-              },
-            );
-          } else if (state is CourseError) {
-            return Center(child: Text(state.message));
-          }
-          return const SizedBox();
-        },
+              }).toList(),
+            ),
+        
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Course Categories',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildCategoriesGrid(),
+                ],
+              ),
+            ),
+          //
+          //
+          //
+          //         BlocBuilder<CourseBloc, CourseState>(
+          //           builder: (context, state) {
+          //             if (state is CourseInitial) {
+          //               context.read<CourseBloc>().add(GetCoursesEvent());
+          //             }
+          //             if (state is CourseLoading) {
+          //               return const Center(child: CircularProgressIndicator());
+          //             } else if (state is CourseLoaded) {
+          //               return GridView.builder(
+          //                 padding: const EdgeInsets.all(16),
+          //                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          //                   crossAxisCount: 2,
+          //                   crossAxisSpacing: 16,
+          //                   mainAxisSpacing: 16,
+          //                   childAspectRatio: 0.75,
+          //                 ),
+          //                 itemCount: state.courses.length,
+          //                 itemBuilder: (context, index) {
+          //                   final course = state.courses[index];
+          //                   return Card(
+          //                     child: InkWell(
+          //                       onTap: () {
+          //                         Navigator.push(
+          //                           context,
+          //                           MaterialPageRoute(
+          //                             builder: (context) => CourseDetailPage(),
+          //                        //     builder: (context) => CourseDetailPage(course: course),
+          //                           ),
+          //                         );
+          //                       },
+          //                       child: Column(
+          //                         crossAxisAlignment: CrossAxisAlignment.start,
+          //                         children: [
+          //                           Expanded(
+          //                             child: Image.network(
+          //                               'https://via.placeholder.com/150',
+          //                               fit: BoxFit.cover,
+          //                             ),
+          //                           ),
+          //                           Padding(
+          //                             padding: const EdgeInsets.all(8.0),
+          //                             child: Text(
+          //                               course.title,
+          //                               style: const TextStyle(fontWeight: FontWeight.bold),
+          //                             ),
+          //                           ),
+          //                           Padding(
+          //                             padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          //                             child: Text(
+          //                               course.description,
+          //                               maxLines: 2,
+          //                               overflow: TextOverflow.ellipsis,
+          //                             ),
+          //                           ),
+          //                         ],
+          //                       ),
+          //                     ),
+          //                   );
+          //                 },
+          //               );
+          //             } else if (state is CourseError) {
+          //               return Center(child: Text(state.message));
+          //             }
+          //             return const SizedBox();
+          //           },
+          //         ),
+          //       ],
+          //     ),
+          //     floatingActionButton: StreamBuilder<DocumentSnapshot>(
+          //       stream: FirebaseFirestore.instance
+          //           .collection('users')
+          //           .doc(user?.uid)
+          //           .snapshots(),
+          //       builder: (context, snapshot) {
+          //         if (snapshot.connectionState == ConnectionState.waiting) {
+          //           return const SizedBox(); // Show nothing while loading
+          //         }
+          //
+          //         if (snapshot.hasError) {
+          //           return const SizedBox(); // Handle errors gracefully
+          //         }
+          //
+          //         if (!snapshot.hasData || !snapshot.data!.exists) {
+          //           return const SizedBox(); // Document does not exist
+          //         }
+          //
+          //         final userData = snapshot.data!;
+          //         if (userData['isAdmin'] == true) {
+          //           return FloatingActionButton(
+          //             onPressed: () {
+          //               _showAdminDialog(context);
+          //             },
+          //             child: const Icon(Icons.add),
+          //           );
+          //         }
+          //         return const SizedBox();
+          //       },
+          //     ),
+          //   );
+          // }
+          ],
+        ),
       ),
-      floatingActionButton: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user?.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(); // Show nothing while loading
-          }
+    );
 
-          if (snapshot.hasError) {
-            return const SizedBox(); // Handle errors gracefully
-          }
+  }
+//   void _showAdminDialog(BuildContext context) {
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         title: Text('add_course'.tr()),
+//         content: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             ListTile(
+//               title: Text('add_course'.tr()),
+//               onTap: () {
+//                 Navigator.pop(context);
+//                 // TODO: Implement add course form
+//                 Fluttertoast.showToast(msg: 'Add Course not implemented yet');
+//               },
+//             ),
+//             ListTile(
+//               title: Text('add_unit'.tr()),
+//               onTap: () {
+//                 Navigator.pop(context);
+//                 // TODO: Implement add unit form
+//                 Fluttertoast.showToast(msg: 'Add Unit not implemented yet');
+//               },
+//             ),
+//             ListTile(
+//               title: Text('add_classroom'.tr()),
+//               onTap: () {
+//                 Navigator.pop(context);
+//                 // TODO: Implement add classroom form
+//                 Fluttertoast.showToast(msg: 'Add Classroom not implemented yet');
+//               },
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
 
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const SizedBox(); // Document does not exist
-          }
 
-          final userData = snapshot.data!;
-          if (userData['isAdmin'] == true) {
-            return FloatingActionButton(
-              onPressed: () {
-                _showAdminDialog(context);
-              },
-              child: const Icon(Icons.add),
-            );
-          }
-          return const SizedBox();
-        },
+  Widget _buildCategoriesGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.0,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
+      itemCount: DummyData.categories.length,
+      itemBuilder: (ctx, index) {
+        return _buildCategoryItem(DummyData.categories[index]);
+      },
     );
   }
 
-  void _showAdminDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('add_course'.tr()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: Text('add_course'.tr()),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement add course form
-                Fluttertoast.showToast(msg: 'Add Course not implemented yet');
-              },
+  Widget _buildCategoryItem(Category category) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>CourseListPage(category: category,),
+          ),
+        );
+      },
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              image: DecorationImage(
+                image: NetworkImage(category.imageUrl),
+                fit: BoxFit.cover,
+              ),
             ),
-            ListTile(
-              title: Text('add_unit'.tr()),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement add unit form
-                Fluttertoast.showToast(msg: 'Add Unit not implemented yet');
-              },
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.6),
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(10),
+                  bottomRight: Radius.circular(10),
+                ),
+              ),
+              child: Text(
+                category.name,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            ListTile(
-              title: Text('add_classroom'.tr()),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: Implement add classroom form
-                Fluttertoast.showToast(msg: 'Add Classroom not implemented yet');
-              },
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

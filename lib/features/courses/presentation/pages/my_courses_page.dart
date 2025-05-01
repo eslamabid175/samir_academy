@@ -52,6 +52,9 @@ class MyCoursesPage extends StatelessWidget {
                     id: courseSnapshot.data!.id,
                     title: courseData['title'],
                     description: courseData['description'],
+                    //todo: like above
+                    categoryId: courseData['categoryId'],
+                      imageUrl: courseData['imageUrl']
                   );
                   return ListTile(
                     title: Text(course.title),

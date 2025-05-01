@@ -1,9 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:samir_academy/presentation/pages/home_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/presentation/bloc/course_bloc.dart';
 import 'features/onboarding/data/dataSource/onboarding_local_data_source.dart';
@@ -16,6 +16,7 @@ void main() async {
   await EasyLocalization.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await di.init();
+//  debugPaintSizeEnabled=true;
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('en'),Locale('ar')],
@@ -40,6 +41,7 @@ class MyApp extends StatelessWidget {
         supportedLocales: context.supportedLocales,
         locale: context.locale,
         title: 'Samir Academy',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(primarySwatch: Colors.blue),
         home: const SplashScreen(),
       ),

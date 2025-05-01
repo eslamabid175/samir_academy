@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../presentation/pages/home_page.dart';
 import '../bloc/auth_bloc.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
-import 'CourseListPage.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
