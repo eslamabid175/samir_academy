@@ -10,7 +10,7 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('E-Learning App')),
+      appBar: AppBar(title: const Text('Samir Academy')),
       body: Center(
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {

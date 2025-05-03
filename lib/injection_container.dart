@@ -3,9 +3,10 @@ import 'package:samir_academy/presentation/bloc/settings/settings_bloc.dart';
 import 'features/auth/data/dataSources/remoteDataSource/auth_remote_data_source.dart';
 import 'features/auth/data/repositoriesImpl/auth_repo_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
+import 'features/auth/domain/usecases/get_current_user.dart'; // Import GetCurrentUser use case
 import 'features/auth/domain/usecases/save_user.dart';
 import 'features/auth/domain/usecases/sign_in_with_google.dart';
-import 'features/auth/domain/usecases/sign_out.dart'; // Import SignOut use case
+import 'features/auth/domain/usecases/sign_out.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/data/dataSource/course_remote_data_source.dart';
 import 'features/courses/data/repoimpl/course_repository_impl.dart';
@@ -31,14 +32,17 @@ Future<void> init() async {
   // Auth Use Cases
   sl.registerLazySingleton(() => SignInWithGoogle(sl()));
   sl.registerLazySingleton(() => SaveUser(sl()));
-  sl.registerLazySingleton(() => SignOut(sl())); // Register SignOut use case
+  sl.registerLazySingleton(() => SignOut(sl()));
+  sl.registerLazySingleton(() => GetCurrentUser(sl())); // Register GetCurrentUser use case
 
   // Register AuthBloc
   sl.registerFactory(() => AuthBloc(
-    signInWithGoogle: sl(),
-    saveUser: sl(),
-    signOut: sl(), // Inject SignOut use case
-  ));
+        signInWithGoogle: sl(),
+        saveUser: sl(),
+        signOut: sl(),
+        getCurrentUser: sl(), // Inject GetCurrentUser use case
+      )..add(CheckAuthStatusEvent()) // Add event to check status on creation
+  );
 
   // Course Use Cases
   sl.registerLazySingleton(() => GetCourses(sl()));
@@ -52,15 +56,15 @@ Future<void> init() async {
 
   // Register CourseBloc
   sl.registerFactory(() => CourseBloc(
-    getCourses: sl(),
-    getCourseDetails: sl(),
-    getUnits: sl(),
-    getLessons: sl(),
-    getLessonDetails: sl(),
-    addCourse: sl(),
-    addUnit: sl(),
-    addLesson: sl(),
-  ));
+        getCourses: sl(),
+        getCourseDetails: sl(),
+        getUnits: sl(),
+        getLessons: sl(),
+        getLessonDetails: sl(),
+        addCourse: sl(),
+        addUnit: sl(),
+        addLesson: sl(),
+      ));
 
   // Onboarding Use Cases
   sl.registerLazySingleton(() => GetOnboardingStatus(sl()));
@@ -71,18 +75,18 @@ Future<void> init() async {
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-          () => AuthRepositoryImpl(remoteDataSource: sl()));
+      () => AuthRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton<CourseRepository>(
-          () => CourseRepositoryImpl(remoteDataSource: sl()));
+      () => CourseRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton<OnboardingRepository>(
-          () => OnboardingRepositoryImpl(localDataSource: sl()));
+      () => OnboardingRepositoryImpl(localDataSource: sl()));
 
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-          () => AuthRemoteDataSourceImpl());
+      () => AuthRemoteDataSourceImpl());
   sl.registerLazySingleton<CourseRemoteDataSource>(
-          () => CourseRemoteDataSourceImpl());
+      () => CourseRemoteDataSourceImpl());
   sl.registerLazySingleton<OnboardingLocalDataSource>(
-          () => OnboardingLocalDataSourceImpl());
+      () => OnboardingLocalDataSourceImpl());
 }
 

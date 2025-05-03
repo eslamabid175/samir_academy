@@ -27,20 +27,26 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
   final AddUnit addUnit; // Added
   final AddLesson addLesson; // Added
 
-  // Cache for state preservation
+  // --- Cache Refactoring ---
+  // Cache for course lists per category
+  final Map<String, List<Course>> _coursesListCache = {};
+
+  // Cache for course details (course + units)
   Course? _lastLoadedCourse;
   List<Unit>? _lastLoadedUnits;
-  List<Lesson>? _lastLoadedLessons;
-  List<Course>? _lastLoadedCoursesList;
-  Lesson? _lastLoadedLesson;
-
-  // IDs for cached data context
   String? _lastLoadedCourseIdForUnits;
+
+  // Cache for unit details (lessons)
+  List<Lesson>? _lastLoadedLessons;
   String? _lastLoadedCourseIdForLessons;
   String? _lastLoadedUnitIdForLessons;
+
+  // Cache for lesson details
+  Lesson? _lastLoadedLesson;
   String? _lastLoadedCourseIdForLesson;
   String? _lastLoadedUnitIdForLesson;
   String? _lastLoadedLessonId;
+  // --- End Cache Refactoring ---
 
 
   CourseBloc({
@@ -65,17 +71,23 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
 
   Future<void> _onGetCourses(
       GetCoursesEvent event, Emitter<CourseState> emit) async {
-    // Check cache first
-    if (_lastLoadedCoursesList != null) {
-      emit(CourseLoaded(courses: _lastLoadedCoursesList!));
+    // --- Cache Logic Update ---
+    // Check cache first using categoryId
+    if (_coursesListCache.containsKey(event.categoryId)) {
+      emit(CourseLoaded(courses: _coursesListCache[event.categoryId]!));
       return;
     }
+    // --- End Cache Logic Update ---
+
     emit(CourseListLoading());
     final result = await getCourses(GetCoursesParams(categoryId: event.categoryId));
     result.fold(
-      (failure) => emit(CourseError(message: failure.message)),
-      (courses) {
-        _lastLoadedCoursesList = courses;
+          (failure) => emit(CourseError(message: failure.message)),
+          (courses) {
+        // --- Cache Logic Update ---
+        // Store fetched courses in cache using categoryId
+        _coursesListCache[event.categoryId!] = courses;
+        // --- End Cache Logic Update ---
         emit(CourseLoaded(courses: courses));
       },
     );
@@ -100,14 +112,14 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     List<Unit>? units;
 
     courseDetailsResult.fold(
-      (failure) => overallFailure = failure,
-      (c) => course = c,
+          (failure) => overallFailure = failure,
+          (c) => course = c,
     );
 
     if (overallFailure == null) {
       unitsResult.fold(
-        (failure) => overallFailure = failure,
-        (u) => units = u,
+            (failure) => overallFailure = failure,
+            (u) => units = u,
       );
     }
 
@@ -132,8 +144,8 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     emit(CourseDetailsLoading()); // Re-use loading state or create specific one
     final result = await getUnits(GetUnitsParams(courseId: event.courseId));
     result.fold(
-      (failure) => emit(CourseError(message: failure.message)),
-      (units) {
+          (failure) => emit(CourseError(message: failure.message)),
+          (units) {
         print("Units loaded separately: ${units.length}");
         // Need to merge with existing state or emit dedicated state
         // Potentially update _lastLoadedUnits and _lastLoadedCourseIdForUnits if needed
@@ -154,8 +166,8 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     emit(UnitDetailsLoading());
     final result = await getLessons(GetLessonsParams(courseId: event.courseId, unitId: event.unitId));
     result.fold(
-      (failure) => emit(CourseError(message: failure.message)),
-      (lessons) {
+          (failure) => emit(CourseError(message: failure.message)),
+          (lessons) {
         // Cache the results and their context
         _lastLoadedLessons = lessons;
         _lastLoadedCourseIdForLessons = event.courseId;
@@ -184,8 +196,8 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
       lessonId: event.lessonId,
     ));
     result.fold(
-      (failure) => emit(CourseError(message: failure.message)),
-      (lesson) {
+          (failure) => emit(CourseError(message: failure.message)),
+          (lesson) {
         // Cache the result and its context
         _lastLoadedLesson = lesson;
         _lastLoadedCourseIdForLesson = event.courseId;
@@ -208,13 +220,16 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
         imageUrl: event.course.imageUrl,
       ));
       result.fold(
-        (failure) {
+            (failure) {
           print('Failed to add course: ${failure.message}');
           emit(CourseActionError(message: failure.message));
         },
-        (_) {
-           _lastLoadedCoursesList = null; // Invalidate course list cache
-           emit(CourseActionSuccess());
+            (_) {
+          // --- Cache Invalidation Update ---
+          // Invalidate specific category cache
+          _coursesListCache.remove(event.course.categoryId);
+          // --- End Cache Invalidation Update ---
+          emit(CourseActionSuccess());
         },
       );
     } catch (e) {
@@ -237,11 +252,11 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
         order: event.unit.order,
       ));
       result.fold(
-        (failure) {
+            (failure) {
           print('Failed to add unit: ${failure.message}');
           emit(CourseActionError(message: failure.message));
         },
-        (_) {
+            (_) {
           // Invalidate cache for the specific course details
           if (_lastLoadedCourseIdForUnits == event.courseId) {
             _lastLoadedUnits = null;
@@ -274,11 +289,11 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
         order: event.lesson.order,
       ));
       result.fold(
-        (failure) {
+            (failure) {
           print('Failed to add lesson: ${failure.message}');
           emit(CourseActionError(message: failure.message));
         },
-        (_) {
+            (_) {
           // Invalidate cache for the specific unit's lessons
           if (_lastLoadedCourseIdForLessons == event.courseId && _lastLoadedUnitIdForLessons == event.unitId) {
             _lastLoadedLessons = null;
@@ -296,10 +311,13 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
 
   // Add method to clear cache (optional, might be useful on logout)
   void clearCache() {
+    // --- Cache Invalidation Update ---
+    _coursesListCache.clear(); // Clear the category map
+    // --- End Cache Invalidation Update ---
     _lastLoadedCourse = null;
     _lastLoadedUnits = null;
     _lastLoadedLessons = null;
-    _lastLoadedCoursesList = null;
+    // _lastLoadedCoursesList = null; // Removed old cache variable
     _lastLoadedLesson = null;
     _lastLoadedCourseIdForUnits = null;
     _lastLoadedCourseIdForLessons = null;
