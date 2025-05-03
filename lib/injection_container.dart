@@ -5,6 +5,7 @@ import 'features/auth/data/repositoriesImpl/auth_repo_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/save_user.dart';
 import 'features/auth/domain/usecases/sign_in_with_google.dart';
+import 'features/auth/domain/usecases/sign_out.dart'; // Import SignOut use case
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/data/dataSource/course_remote_data_source.dart';
 import 'features/courses/data/repoimpl/course_repository_impl.dart';
@@ -27,11 +28,19 @@ import 'features/onboarding/domain/usecases/set_onboarding_status.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  // Auth Use Cases
   sl.registerLazySingleton(() => SignInWithGoogle(sl()));
   sl.registerLazySingleton(() => SaveUser(sl()));
-  // Register AuthBloc
-  sl.registerFactory(() => AuthBloc(signInWithGoogle: sl(), saveUser: sl()));
+  sl.registerLazySingleton(() => SignOut(sl())); // Register SignOut use case
 
+  // Register AuthBloc
+  sl.registerFactory(() => AuthBloc(
+    signInWithGoogle: sl(),
+    saveUser: sl(),
+    signOut: sl(), // Inject SignOut use case
+  ));
+
+  // Course Use Cases
   sl.registerLazySingleton(() => GetCourses(sl()));
   sl.registerLazySingleton(() => GetCourseDetails(sl()));
   sl.registerLazySingleton(() => GetUnits(sl()));
@@ -41,6 +50,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddUnit(sl()));
   sl.registerLazySingleton(() => AddLesson(sl()));
 
+  // Register CourseBloc
   sl.registerFactory(() => CourseBloc(
     getCourses: sl(),
     getCourseDetails: sl(),
@@ -50,9 +60,9 @@ Future<void> init() async {
     addCourse: sl(),
     addUnit: sl(),
     addLesson: sl(),
-    // addClassroom: sl(), // If needed
   ));
 
+  // Onboarding Use Cases
   sl.registerLazySingleton(() => GetOnboardingStatus(sl()));
   sl.registerLazySingleton(() => SetOnboardingCompleted(sl()));
 
@@ -75,3 +85,4 @@ Future<void> init() async {
   sl.registerLazySingleton<OnboardingLocalDataSource>(
           () => OnboardingLocalDataSourceImpl());
 }
+

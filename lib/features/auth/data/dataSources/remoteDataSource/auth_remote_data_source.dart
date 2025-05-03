@@ -6,9 +6,9 @@ import '../../models/user_model.dart'; // Assuming UserModel exists
 
 abstract class AuthRemoteDataSource {
   Future<UserModel> signInWithGoogle();
-  // Future<void> signOut(); // Not implemented in provided snippet
+  Future<void> signOut(); // Added signOut method
   Future<void> saveUser(UserModel user);
-  Future<void> deleteUSer(); // Typo in original, assuming deleteUser
+  Future<void> deleteUser(); // Corrected typo from deleteUSer
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -19,6 +19,10 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> signInWithGoogle() async {
     try {
+      // Ensure user is signed out from Google before attempting a new sign-in
+      // This can help prevent issues if the previous session wasn't fully cleared.
+      await _googleSignIn.signOut();
+
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         // User cancelled the sign-in
@@ -31,73 +35,87 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         idToken: googleAuth.idToken,
       );
 
+      // Sign in to Firebase
       final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
       final User? firebaseUser = userCredential.user;
 
       if (firebaseUser == null) {
-        throw  AuthFailure('Failed to sign in with Google.');
+        throw const AuthFailure('Failed to sign in with Google.');
       }
 
       // Check if user exists in Firestore, if not, create a new entry
-      final userDoc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+      final userDocRef = _firestore.collection('users').doc(firebaseUser.uid);
+      final userDoc = await userDocRef.get();
+
       if (!userDoc.exists) {
         // Create a new user model if it doesn't exist
         final newUser = UserModel(
           id: firebaseUser.uid,
           name: firebaseUser.displayName ?? 'No Name',
           email: firebaseUser.email ?? 'No Email',
+          isAdmin: false, // Default isAdmin to false for new users
           // Initialize other fields as needed
         );
         await saveUser(newUser); // Save the new user to Firestore
         return newUser;
       } else {
-        // User exists, return the existing user data
+        // User exists, fetch and return the existing user data
+        // Ensure isAdmin is fetched correctly
         return UserModel.fromFirestore(userDoc);
       }
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase auth errors
+      throw AuthFailure('Firebase Sign-In failed: ${e.message} (${e.code})');
     } catch (e) {
-      // Log the error e
-      throw  AuthFailure('Google Sign-In failed: ${e.toString()}');
+      // Handle other errors like network issues or Google Sign-In errors
+      throw AuthFailure('Google Sign-In failed: ${e.toString()}');
     }
   }
 
   @override
   Future<void> saveUser(UserModel user) async {
     try {
-      await _firestore.collection('users').doc(user.id).set(user.toFirestore());
+      // Use merge: true to avoid overwriting fields like isAdmin if not included in the model update
+      await _firestore.collection('users').doc(user.id).set(user.toFirestore(), SetOptions(merge: true));
     } catch (e) {
-      // Log the error e
-      throw  AuthFailure('Failed to save user: ${e.toString()}');
+      throw AuthFailure('Failed to save user: ${e.toString()}');
     }
   }
 
   @override
-  Future<void> deleteUSer() async { // Keeping original typo for now, but should be deleteUser
+  Future<void> signOut() async {
     try {
-      final User? currentUser = _firebaseAuth.currentUser;
-      if (currentUser != null) {
-        // Delete from Firestore
-        await _firestore.collection('users').doc(currentUser.uid).delete();
-        // Delete from Firebase Auth
-        await currentUser.delete();
-        // Sign out from Google as well if needed
-        await _googleSignIn.signOut();
-      } else {
-        throw const AuthFailure('No user currently signed in to delete.');
-      }
+      await _googleSignIn.signOut();
+      await _firebaseAuth.signOut();
     } catch (e) {
-      // Log the error e
-      throw  AuthFailure('Failed to delete user: ${e.toString()}');
+      // It's generally safe to ignore sign-out errors, but log them
+      print('Error during sign out: ${e.toString()}');
+      // Optionally rethrow if sign-out failure needs specific handling
+      // throw AuthFailure('Sign out failed: ${e.toString()}');
     }
   }
 
-// Implement signOut if needed
-// Future<void> signOut() async {
-//   try {
-//     await _googleSignIn.signOut();
-//     await _firebaseAuth.signOut();
-//   } catch (e) {
-//     throw ServerException('Sign out failed: ${e.toString()}');
-//   }
-// }
+  @override
+  Future<void> deleteUser() async { // Corrected method name
+    try {
+      final User? currentUser = _firebaseAuth.currentUser;
+      if (currentUser != null) {
+        final String uid = currentUser.uid; // Store UID before deleting user
+        // Delete from Firebase Auth first
+        await currentUser.delete();
+        // Then delete from Firestore
+        await _firestore.collection('users').doc(uid).delete();
+        // Sign out from Google as well
+        await _googleSignIn.signOut(); // Ensure Google session is cleared
+      } else {
+        throw const AuthFailure('No user currently signed in to delete.');
+      }
+    } on FirebaseAuthException catch (e) {
+      // Handle specific errors like requires-recent-login
+      throw AuthFailure('Failed to delete Firebase user: ${e.message} (${e.code})');
+    } catch (e) {
+      throw AuthFailure('Failed to delete user: ${e.toString()}');
+    }
+  }
 }
 

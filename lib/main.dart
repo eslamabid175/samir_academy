@@ -1,11 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:samir_academy/core/navigation/app_router.dart'; // Import AppRouter
-import 'package:samir_academy/core/navigation/routes.dart'; // Import AppRoutes
-import 'package:samir_academy/presentation/bloc/settings/settings_bloc.dart'; // Import SettingsBloc
+import 'package:samir_academy/core/navigation/app_router.dart';
+import 'package:samir_academy/core/navigation/routes.dart';
+import 'package:samir_academy/presentation/bloc/settings/settings_bloc.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/presentation/bloc/course_bloc.dart';
 import 'features/onboarding/data/dataSource/onboarding_local_data_source.dart';
@@ -37,29 +36,27 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
         BlocProvider(create: (_) => di.sl<CourseBloc>()),
-        BlocProvider(create: (_) => di.sl<SettingsBloc>()..add(LoadSettings())), // Use dependency injection
+        BlocProvider(create: (_) => di.sl<SettingsBloc>()..add(LoadSettings())),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
           return MaterialApp(
             localizationsDelegates: context.localizationDelegates,
             supportedLocales: context.supportedLocales,
-            locale: settingsState.locale, // Use locale from SettingsBloc
-            title: "Samir Academy", // Use translation key
+            locale: settingsState.locale,
+            title: 'Samir Academy',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               primarySwatch: Colors.blue,
               brightness: Brightness.light,
-              // Define other light theme properties
             ),
             darkTheme: ThemeData(
               primarySwatch: Colors.blue,
               brightness: Brightness.dark,
-              // Define other dark theme properties
             ),
-            themeMode: settingsState.themeMode, // Use themeMode from SettingsBloc
-            onGenerateRoute: AppRouter.generateRoute, // Use named routes
-            home: const SplashScreen(), // Initial screen
+            themeMode: settingsState.themeMode,
+            onGenerateRoute: AppRouter.generateRoute,
+            initialRoute: '/', // استخدم / كـ default
           );
         },
       ),
@@ -67,38 +64,49 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class SplashScreen extends StatefulWidget {  // Change to StatefulWidget
+// ✅ SplashScreen as default route (mapped to "/")
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    _checkOnboardingStatus();
-  }
-
-  Future<void> _checkOnboardingStatus() async {
-    final onboardingStatus = await di.sl<OnboardingLocalDataSource>().getOnboardingStatus();
-
-    if (mounted) {
-      if (!onboardingStatus) {
-        Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
-      } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.home);
-      }
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
+    return FutureBuilder<bool>(
+      future: di.sl<OnboardingLocalDataSource>().getOnboardingStatus(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        } else if (snapshot.hasError) {
+          print('❌ Error getting onboarding status: ${snapshot.error}');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                AppRoutes.onboarding,
+                    (route) => false,
+              );
+            }
+          });
+        } else {
+          final bool onboardingCompleted = snapshot.data ?? false;
+          print('✅ Onboarding completed: $onboardingCompleted');
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              final routeName =
+              onboardingCompleted ? AppRoutes.home : AppRoutes.onboarding;
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                routeName,
+                    (route) => false,
+              );
+            }
+          });
+        }
+
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      },
     );
   }
 }

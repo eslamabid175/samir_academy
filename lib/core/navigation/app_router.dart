@@ -16,28 +16,33 @@ import 'package:samir_academy/features/onboarding/presentation/pages/onboarding_
 import 'package:samir_academy/injection_container.dart';
 import 'package:samir_academy/presentation/pages/home_page.dart';
 import 'package:samir_academy/presentation/pages/settings_page.dart';
+import 'package:samir_academy/main.dart'; // لاستيراد SplashScreen
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    // Getting arguments passed in while calling Navigator.pushNamed
+    // 🔍 Debug Log
+    print('📍 Navigating to: ${settings.name} with args: ${settings.arguments}');
+
     final args = settings.arguments;
 
-    // Provide necessary Blocs using MultiBlocProvider where needed
-    // Note: It's often better to provide Blocs higher up the widget tree (e.g., in main.dart or specific feature routes)
-    // But for simplicity in refactoring, we can provide them here if they are needed by the specific screen.
-    // Ensure sl<AuthBloc>() and sl<CourseBloc>() are correctly initialized.
-
     switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
+
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => HomePage());
+
       case AppRoutes.onboarding:
         return MaterialPageRoute(builder: (_) => const OnboardingPage());
+
       case AppRoutes.settings:
-         return MaterialPageRoute(builder: (_) => SettingsPage()); // Assuming SettingsPage exists
+        return MaterialPageRoute(builder: (_) => SettingsPage());
+
       case AppRoutes.myCourses:
-         return MaterialPageRoute(builder: (_) => MyCoursesPage()); // Assuming MyCoursesPage exists
+        return MaterialPageRoute(builder: (_) => MyCoursesPage());
+
       case AppRoutes.bookmarks:
-         return MaterialPageRoute(builder: (_) => BookmarksPage()); // Assuming BookmarksPage exists
+        return MaterialPageRoute(builder: (_) => BookmarksPage());
 
       case AppRoutes.coursesList:
         if (args is String) {
@@ -109,52 +114,52 @@ class AppRouter {
         }
 
       case AppRoutes.addCourse:
-         if (args is String) { // Expecting categoryId
-           return MaterialPageRoute(
-             builder: (_) => MultiBlocProvider(
-               providers: [
-                 BlocProvider.value(value: sl<CourseBloc>()),
-                 BlocProvider.value(value: sl<AuthBloc>()),
-               ],
-               child: AddCourseScreen(categoryId: args),
-             ),
-           );
-         } else {
-           return _errorRoute("Invalid arguments for addCourse");
-         }
+        if (args is String) {
+          return MaterialPageRoute(
+            builder: (_) => MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: sl<CourseBloc>()),
+                BlocProvider.value(value: sl<AuthBloc>()),
+              ],
+              child: AddCourseScreen(categoryId: args),
+            ),
+          );
+        } else {
+          return _errorRoute("Invalid arguments for addCourse");
+        }
 
       case AppRoutes.addUnit:
-         if (args is String) { // Expecting courseId
-           return MaterialPageRoute(
-             builder: (_) => MultiBlocProvider(
-               providers: [
-                 BlocProvider.value(value: sl<CourseBloc>()),
-                 BlocProvider.value(value: sl<AuthBloc>()),
-               ],
-               child: AddUnitScreen(courseId: args),
-             ),
-           );
-         } else {
-           return _errorRoute("Invalid arguments for addUnit");
-         }
+        if (args is String) {
+          return MaterialPageRoute(
+            builder: (_) => MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: sl<CourseBloc>()),
+                BlocProvider.value(value: sl<AuthBloc>()),
+              ],
+              child: AddUnitScreen(courseId: args),
+            ),
+          );
+        } else {
+          return _errorRoute("Invalid arguments for addUnit");
+        }
 
       case AppRoutes.addLesson:
-         if (args is Map<String, String>) { // Expecting courseId and unitId
-           return MaterialPageRoute(
-             builder: (_) => MultiBlocProvider(
-               providers: [
-                 BlocProvider.value(value: sl<CourseBloc>()),
-                 BlocProvider.value(value: sl<AuthBloc>()),
-               ],
-               child: AddLessonScreen(
-                 courseId: args['courseId']!,
-                 unitId: args['unitId']!,
-               ),
-             ),
-           );
-         } else {
-           return _errorRoute("Invalid arguments for addLesson");
-         }
+        if (args is Map<String, String>) {
+          return MaterialPageRoute(
+            builder: (_) => MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: sl<CourseBloc>()),
+                BlocProvider.value(value: sl<AuthBloc>()),
+              ],
+              child: AddLessonScreen(
+                courseId: args['courseId']!,
+                unitId: args['unitId']!,
+              ),
+            ),
+          );
+        } else {
+          return _errorRoute("Invalid arguments for addLesson");
+        }
 
       default:
         return _errorRoute("Unknown route: ${settings.name}");
@@ -170,4 +175,3 @@ class AppRouter {
     });
   }
 }
-
