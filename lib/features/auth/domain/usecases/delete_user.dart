@@ -15,3 +15,4 @@ return await _authRepository.deleteUser();
   }
 
 }
+class NoParams {}

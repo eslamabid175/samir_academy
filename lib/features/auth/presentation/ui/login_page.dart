@@ -17,7 +17,7 @@ class LoginPage extends StatelessWidget {
             if (state is AuthAuthenticated) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
+                MaterialPageRoute(builder: (context) =>  HomePage()),
               );
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(

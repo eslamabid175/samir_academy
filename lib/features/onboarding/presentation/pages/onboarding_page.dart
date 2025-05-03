@@ -50,7 +50,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await prefs.setBool('onboarding_completed', true);
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
+      MaterialPageRoute(builder: (context) =>  HomePage()),
     );
   }
 

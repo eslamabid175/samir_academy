@@ -1,16 +1,23 @@
-import 'package:carousel_slider/carousel_slider.dart' show CarouselSlider, CarouselOptions;import 'package:easy_localization/easy_localization.dart';
+
+
+
+
+import 'package:carousel_slider/carousel_slider.dart' show CarouselSlider, CarouselOptions;
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:samir_academy/features/courses/presentation/pages/course_list_page.dart';
+// import 'package:samir_academy/features/courses/presentation/pages/course_list_page.dart';
 import 'package:samir_academy/presentation/pages/settings_page.dart';
 
 import '../../core/utils/dummy_data.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/ui/login_page.dart';
 import '../../features/courses/domain/entities/category.dart';
+import '../../features/courses/presentation/bloc/course_bloc.dart';
 import '../../features/courses/presentation/pages/bookmarks_page.dart';
+import '../../features/courses/presentation/pages/courses_list_screen.dart';
 import '../../features/courses/presentation/pages/my_courses_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,8 +34,9 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final user = firebase_auth.FirebaseAuth.instance.currentUser;
 
+
     return Scaffold(
-      appBar: AppBar(title: Text('home'.tr()),elevation: 0,),
+      appBar: AppBar(title: const Text('Samir Academy'),elevation: 0,),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -101,7 +109,7 @@ class _HomePageState extends State<HomePage> {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => const HomePage()),
-                      (route) => false, // Clear navigation stack after logout
+                          (route) => false, // Clear navigation stack after logout
                     );
                   });
                 }
@@ -126,6 +134,7 @@ class _HomePageState extends State<HomePage> {
                         image: DecorationImage(
                           image: NetworkImage(imageUrl),
                           fit: BoxFit.cover,
+
                         ),
                       ),
                     );
@@ -147,9 +156,9 @@ class _HomePageState extends State<HomePage> {
                   });
                 },
               ),
-        
+
             ),
-        
+
             // Carousel Indicators
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -167,14 +176,14 @@ class _HomePageState extends State<HomePage> {
                 );
               }).toList(),
             ),
-        
+
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Course Categories',
+                    'Categories',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -185,7 +194,7 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -195,6 +204,38 @@ class _HomePageState extends State<HomePage> {
 
 
   Widget _buildCategoriesGrid() {
+    final List<Category> categories = [
+      Category(
+        id: 'c1',
+        name: 'Medicine',
+        imageUrl: 'https://images.unsplash.com/photo-1505751172876-fa1923c5c528?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+      Category(
+        id: 'c2',
+        name: 'Engineering',
+        imageUrl: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+      Category(
+        id: 'c3',
+        name: 'Business',
+        imageUrl: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+      Category(
+        id: 'c4',
+        name: 'Computer Science',
+        imageUrl: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+      Category(
+        id: 'c5',
+        name: 'Arts',
+        imageUrl: 'https://images.unsplash.com/photo-1452802447250-470a88ac82bc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+      Category(
+        id: 'c6',
+        name: 'Languages',
+        imageUrl: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
+      ),
+    ];
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -204,9 +245,9 @@ class _HomePageState extends State<HomePage> {
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
       ),
-      itemCount: DummyData.categories.length,
+      itemCount: categories.length,
       itemBuilder: (ctx, index) {
-        return _buildCategoryItem(DummyData.categories[index]);
+        return _buildCategoryItem(categories[index]);
       },
     );
   }
@@ -214,11 +255,15 @@ class _HomePageState extends State<HomePage> {
   Widget _buildCategoryItem(Category category) {
     return GestureDetector(
       onTap: () {
+        BlocProvider.of<CourseBloc>(context).add(GetCoursesEvent(categoryId: category.id));
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) =>CourseListPage(category: category,),
-          ),
+            MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: BlocProvider.of<CourseBloc>(context),
+                            child: CoursesListScreen(categoryId: category.id),
+                          ),
+                        ),
         );
       },
       child: Stack(
@@ -256,8 +301,114 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+
         ],
       ),
     );
   }
 }
+
+
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('Samir Academy'),
+//       ),
+//       body: SingleChildScrollView(
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             // Carousel Slider
+//
+//
+//             // Categories Section Title
+//             const Padding(
+//               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+//               child: Text(
+//                 'Categories',
+//                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+//               ),
+//             ),
+//
+//             // Categories GridView
+//             Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: GridView.builder(
+//                 shrinkWrap: true,
+//                 physics: const NeverScrollableScrollPhysics(), // Disable GridView scrolling
+//                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+//                   crossAxisCount: 2, // Number of columns
+//                   crossAxisSpacing: 8.0,
+//                   mainAxisSpacing: 8.0,
+//                   childAspectRatio: 1.0, // Adjust aspect ratio (width/height)
+//                 ),
+//                 itemCount: categories.length,
+//                 itemBuilder: (context, index) {
+//                   final category = categories[index];
+//                   return InkWell(
+//                     onTap: () {
+//                       BlocProvider.of<CourseBloc>(context).add(GetCoursesEvent(categoryId: category.id));
+//                       Navigator.push(
+//                         context,
+//                         MaterialPageRoute(
+//                           builder: (_) => BlocProvider.value(
+//                             value: BlocProvider.of<CourseBloc>(context),
+//                             child: CoursesListScreen(categoryId: category.id),
+//                           ),
+//                         ),
+//                       );
+//                     },
+//                     child: Card(
+//                       elevation: 2.0,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(8.0),
+//                       ),
+//                       child: Column(
+//                         crossAxisAlignment: CrossAxisAlignment.stretch,
+//                         children: [
+//                           Expanded(
+//                             child: ClipRRect(
+//                               borderRadius: const BorderRadius.vertical(top: Radius.circular(8.0)),
+//                               child: Image.network(
+//                                 category.imageUrl,
+//                                 fit: BoxFit.cover,
+//                                 errorBuilder: (context, error, stackTrace) =>
+//                                 const Center(child: Icon(Icons.broken_image, size: 40)),
+//                                 loadingBuilder: (context, child, loadingProgress) {
+//                                   if (loadingProgress == null) return child;
+//                                   return const Center(child: CircularProgressIndicator());
+//                                 },
+//                               ),
+//                             ),
+//                           ),
+//                           Padding(
+//                             padding: const EdgeInsets.all(8.0),
+//                             child: Text(
+//                               category.name,
+//                               textAlign: TextAlign.center,
+//                               style: const TextStyle(fontWeight: FontWeight.bold),
+//                               maxLines: 1,
+//                               overflow: TextOverflow.ellipsis,
+//                             ),
+//                           ),
+//                         ],
+//                       ),
+//                     ),
+//                   );
+//                 },
+//               ),
+//             ),
+//             const SizedBox(height: 20), // Add some spacing at the bottom
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+//
+
+
+
+
