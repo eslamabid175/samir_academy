@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:samir_academy/features/courses/presentation/pages/course_list_page.dart';
 import 'package:samir_academy/presentation/pages/settings_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../core/utils/dummy_data.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
@@ -189,10 +190,76 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
+      floatingActionButton: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user?.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox(); // Show nothing while loading
+          }
 
+          if (snapshot.hasError) {
+            return const SizedBox(); // Handle errors gracefully
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const SizedBox(); // Document does not exist
+          }
+
+          final userData = snapshot.data!;
+          if (userData['isAdmin'] == true) {
+            return FloatingActionButton(
+              onPressed: () {
+                _showAdminDialog(context);
+              },
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox();
+        },
+      ),
+    );
   }
 
+  void _showAdminDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('add_course'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('add_course'.tr()),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement add course form
+                Fluttertoast.showToast(msg: 'Add Course not implemented yet');
+              },
+            ),
+            ListTile(
+              title: Text('add_unit'.tr()),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement add unit form
+                Fluttertoast.showToast(msg: 'Add Unit not implemented yet');
+              },
+            ),
+            ListTile(
+              title: Text('add_classroom'.tr()),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement add classroom form
+                Fluttertoast.showToast(msg: 'Add Classroom not implemented yet');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _buildCategoriesGrid() {
     return GridView.builder(

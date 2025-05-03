@@ -5,6 +5,7 @@ import 'features/auth/data/repositoriesImpl/auth_repo_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/save_user.dart';
 import 'features/auth/domain/usecases/sign_in_with_google.dart';
+import 'features/auth/domain/usecases/update_user_admin_status.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/data/dataSource/course_remote_data_source.dart';
 import 'features/courses/data/repoimpl/course_repository_impl.dart';
@@ -22,10 +23,9 @@ import 'features/onboarding/domain/usecases/set_onboarding_status.dart';
 
 final sl = GetIt.instance;
 
-
 Future<void> init() async {
   // BLoC
-  sl.registerFactory(() => AuthBloc(signInWithGoogle: sl(), saveUser: sl()));
+  sl.registerFactory(() => AuthBloc(signInWithGoogle: sl(), saveUser: sl(), updateUserAdminStatus: sl()));
   sl.registerFactory(() => CourseBloc(getCourses: sl()));
 
   // Use Cases
@@ -37,6 +37,7 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddClassroom(sl()));
   sl.registerLazySingleton(() => GetOnboardingStatus(sl()));
   sl.registerLazySingleton(() => SetOnboardingCompleted(sl()));
+  sl.registerLazySingleton(() => UpdateUserAdminStatus(sl()));
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(

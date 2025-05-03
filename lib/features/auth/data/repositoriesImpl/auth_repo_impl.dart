@@ -62,4 +62,14 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> updateUserAdminStatus(String userId, bool isAdmin) async {
+    try {
+      await remoteDataSource.updateUserAdminStatus(userId, isAdmin);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }
