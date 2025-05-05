@@ -2,18 +2,23 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:samir_academy/core/navigation/app_router.dart';
 import 'package:samir_academy/core/navigation/routes.dart';
 import 'package:samir_academy/presentation/bloc/settings/settings_bloc.dart';
 import 'features/auth/presentation/bloc/auth_bloc.dart';
+import 'features/books/presentation/bloc/books_bloc.dart';
 import 'features/courses/presentation/bloc/course_bloc.dart';
 import 'features/onboarding/data/dataSource/onboarding_local_data_source.dart';
+import 'features/quizzes/presentation/bloc/quizzes_bloc.dart';
 import 'firebase_options.dart';
 import 'injection_container.dart' as di;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await Hive.initFlutter(); // Initialize Hive
+  await Hive.openBox('local_storage'); // Open Hive box (replace with your box name)
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await di.init();
 
@@ -37,6 +42,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
         BlocProvider(create: (_) => di.sl<CourseBloc>()),
         BlocProvider(create: (_) => di.sl<SettingsBloc>()..add(LoadSettings())),
+        BlocProvider(create: (_) => di.sl<BooksBloc>()),
+        BlocProvider(create: (_) => di.sl<QuizzesBloc>()),
       ],
       child: BlocBuilder<SettingsBloc, SettingsState>(
         builder: (context, settingsState) {
@@ -56,7 +63,7 @@ class MyApp extends StatelessWidget {
             ),
             themeMode: settingsState.themeMode,
             onGenerateRoute: AppRouter.generateRoute,
-            initialRoute: '/', // استخدم / كـ default
+            initialRoute: '/',
           );
         },
       ),
@@ -64,7 +71,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// ✅ SplashScreen as default route (mapped to "/")
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
@@ -94,7 +100,7 @@ class SplashScreen extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) {
               final routeName =
-              onboardingCompleted ? AppRoutes.home : AppRoutes.onboarding;
+              onboardingCompleted ? AppRoutes.preHome : AppRoutes.onboarding;
               Navigator.of(context).pushNamedAndRemoveUntil(
                 routeName,
                     (route) => false,

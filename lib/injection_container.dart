@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
+import 'package:hive/hive.dart';
 import 'package:samir_academy/presentation/bloc/settings/settings_bloc.dart';
 import 'features/auth/data/dataSources/remoteDataSource/auth_remote_data_source.dart';
 import 'features/auth/data/repositoriesImpl/auth_repo_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
-import 'features/auth/domain/usecases/get_current_user.dart'; // Import GetCurrentUser use case
+import 'features/auth/domain/usecases/get_current_user.dart';
 import 'features/auth/domain/usecases/save_user.dart';
 import 'features/auth/domain/usecases/sign_in_with_google.dart';
 import 'features/auth/domain/usecases/sign_out.dart';
@@ -47,20 +49,25 @@ import 'features/quizzes/presentation/bloc/quizzes_bloc.dart';
 final sl = GetIt.instance;
 
 Future<void> init() async {
+  // Register FirebaseFirestore
+  sl.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+
+  // Register Hive Box (after initialization in main.dart)
+  sl.registerLazySingleton<Box>(() => Hive.box('local_storage')); // Replace 'local_storage' with your box name
+
   // Auth Use Cases
   sl.registerLazySingleton(() => SignInWithGoogle(sl()));
   sl.registerLazySingleton(() => SaveUser(sl()));
   sl.registerLazySingleton(() => SignOut(sl()));
-  sl.registerLazySingleton(() => GetCurrentUser(sl())); // Register GetCurrentUser use case
+  sl.registerLazySingleton(() => GetCurrentUser(sl()));
 
   // Register AuthBloc
   sl.registerFactory(() => AuthBloc(
-        signInWithGoogle: sl(),
-        saveUser: sl(),
-        signOut: sl(),
-        getCurrentUser: sl(), // Inject GetCurrentUser use case
-      )..add(CheckAuthStatusEvent()) // Add event to check status on creation
-  );
+    signInWithGoogle: sl(),
+    saveUser: sl(),
+    signOut: sl(),
+    getCurrentUser: sl(),
+  )..add(CheckAuthStatusEvent()));
 
   // Course Use Cases
   sl.registerLazySingleton(() => GetCourses(sl()));
@@ -76,18 +83,17 @@ Future<void> init() async {
 
   // Register CourseBloc
   sl.registerFactory(() => CourseBloc(
-        getCourses: sl(),
-        getCourseDetails: sl(),
-        getUnits: sl(),
-        getLessons: sl(),
-        getLessonDetails: sl(),
-        getCategories: sl(),
-        addCourse: sl(),
-        addUnit: sl(),
-        addLesson: sl(),
+    getCourses: sl(),
+    getCourseDetails: sl(),
+    getUnits: sl(),
+    getLessons: sl(),
+    getLessonDetails: sl(),
+    getCategories: sl(),
+    addCourse: sl(),
+    addUnit: sl(),
+    addLesson: sl(),
     addCategory: sl(),
-
-      ));
+  ));
 
   // Onboarding Use Cases
   sl.registerLazySingleton(() => GetOnboardingStatus(sl()));
@@ -98,33 +104,28 @@ Future<void> init() async {
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
-      () => AuthRepositoryImpl(remoteDataSource: sl()));
+          () => AuthRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton<CourseRepository>(
-      () => CourseRepositoryImpl(remoteDataSource: sl()));
+          () => CourseRepositoryImpl(remoteDataSource: sl()));
   sl.registerLazySingleton<OnboardingRepository>(
-      () => OnboardingRepositoryImpl(localDataSource: sl()));
+          () => OnboardingRepositoryImpl(localDataSource: sl()));
 
   // Data Sources
   sl.registerLazySingleton<AuthRemoteDataSource>(
-      () => AuthRemoteDataSourceImpl());
+          () => AuthRemoteDataSourceImpl());
   sl.registerLazySingleton<CourseRemoteDataSource>(
-      () => CourseRemoteDataSourceImpl());
+          () => CourseRemoteDataSourceImpl());
   sl.registerLazySingleton<OnboardingLocalDataSource>(
-      () => OnboardingLocalDataSourceImpl());
+          () => OnboardingLocalDataSourceImpl());
 
-
-
-
-  //! Features - Books
+  // Features - Books
   // Bloc
-  sl.registerFactory(
-        () => BooksBloc(
-      getBooksUseCase: sl(),
-      getBookDetailsUseCase: sl(),
-      addBookmarkUseCase: sl(),
-      addNoteUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => BooksBloc(
+    getBooksUseCase: sl(),
+    getBookDetailsUseCase: sl(),
+    addBookmarkUseCase: sl(),
+    addNoteUseCase: sl(),
+  ));
 
   // Use cases
   sl.registerLazySingleton(() => GetBooksUseCase(sl()));
@@ -134,57 +135,46 @@ Future<void> init() async {
 
   // Repository
   sl.registerLazySingleton<BooksRepository>(
-        () => BooksRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
-  );
+          () => BooksRepositoryImpl(
+        remoteDataSource: sl(),
+        localDataSource: sl(),
+      ));
 
   // Data sources
   sl.registerLazySingleton<BooksRemoteDataSource>(
-        () => BooksRemoteDataSourceImpl(
-      firestore: sl(),
-    ),
-  );
+          () => BooksRemoteDataSourceImpl(
+        firestore: sl(),
+      ));
   sl.registerLazySingleton<BooksLocalDataSource>(
-        () => BooksLocalDataSourceImpl(
-      box: sl(),
-    ),
-  );
+          () => BooksLocalDataSourceImpl(
+        box: sl(),
+      ));
 
-  //! Features - Quizzes
+  // Features - Quizzes
   // Bloc
-  sl.registerFactory(
-        () => QuizzesBloc(
-      getQuizzesUseCase: sl(),
-      submitQuizAnswerUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => QuizzesBloc(
+    getQuizzesUseCase: sl(),
+    submitQuizAnswerUseCase: sl(),
+  ));
 
   // Use cases
-  sl.registerLazySingleton(() =>  GetQuizzesUseCase(sl()));
+  sl.registerLazySingleton(() => GetQuizzesUseCase(sl()));
   sl.registerLazySingleton(() => SubmitQuizAnswerUseCase(sl()));
 
   // Repository
   sl.registerLazySingleton<QuizzesRepository>(
-        () => QuizzesRepositoryImpl(
-      remoteDataSource: sl(),
-      localDataSource: sl(),
-    ),
-  );
+          () => QuizzesRepositoryImpl(
+        remoteDataSource: sl(),
+        localDataSource: sl(),
+      ));
 
   // Data sources
   sl.registerLazySingleton<QuizzesRemoteDataSource>(
-        () => QuizzesRemoteDataSourceImpl(
-      firestore: sl(),
-    ),
-  );
+          () => QuizzesRemoteDataSourceImpl(
+        firestore: sl(),
+      ));
   sl.registerLazySingleton<QuizzesLocalDataSource>(
-        () => QuizzesLocalDataSourceImpl(
-      box: sl(),
-    ),
-  );
-
-
+          () => QuizzesLocalDataSourceImpl(
+        box: sl(),
+      ));
 }
-

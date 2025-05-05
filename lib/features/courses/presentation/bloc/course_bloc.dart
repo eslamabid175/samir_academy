@@ -101,7 +101,7 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
       },
     );
   }
-
+  List<Category>? get cachedCategories => _categoriesCache;
   Future<void> _onAddCategory(
       AddCategoryEvent event, Emitter<CourseState> emit) async {
     emit(CourseActionLoading()); // Use generic action loading state

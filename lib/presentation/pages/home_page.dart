@@ -29,19 +29,30 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _currentCarouselIndex = 0;
+  // int _currentCarouselIndex = 0;
   // Removed _isAdmin state variable
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<Category> _allCategories = []; // To store all fetched categories
   List<Category> _filteredCategories = []; // To store filtered categories
-
   @override
   void initState() {
     super.initState();
+
     // Fetch categories when the page loads
     context.read<CourseBloc>().add(const GetCategoriesEvent());
-    // Removed _checkAdminStatus call
+context.read<CourseBloc>().cachedCategories;
+
+    // Check cache immediately to update _allCategories if categories are cached
+    final courseBloc = context.read<CourseBloc>();
+
+    if (courseBloc.cachedCategories != null) {
+      setState(() {
+        _allCategories = courseBloc.cachedCategories!;
+        _filterCategories();
+      });
+    }
+
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -81,96 +92,6 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Samir Academy'), elevation: 0),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            UserAccountsDrawerHeader(
-              accountName: Text(user?.displayName ?? 'Guest'),
-              accountEmail: Text(user?.email ?? 'Not signed in'),
-              currentAccountPicture: CircleAvatar(
-                backgroundImage: user?.photoURL != null ? NetworkImage(user!.photoURL!) : null,
-                child: user?.photoURL == null ? const Icon(Icons.person) : null,
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.book),
-              title: Text('my_courses'.tr()),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MyCoursesPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmark),
-              title: Text('bookmarks'.tr()),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BookmarksPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.settings),
-              title: Text('settings'.tr()),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip),
-              title: Text('privacy_policy'.tr()),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Fluttertoast.showToast(msg: 'Privacy Policy not implemented yet');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.info),
-              title: Text('about_us'.tr()),
-              onTap: () {
-                Navigator.pop(context); // Close drawer
-                Fluttertoast.showToast(msg: 'About Us not implemented yet');
-              },
-            ),
-            const Divider(),
-            ListTile(
-              leading: Icon(user == null ? Icons.login : Icons.logout),
-              title: Text(user == null ? 'login'.tr() : 'logout'.tr()),
-              onTap: () async {
-                Navigator.pop(context); // Close drawer
-                if (user == null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                } else {
-                  context.read<AuthBloc>().add(LogOutEvent());
-                  final authBloc = context.read<AuthBloc>();
-                  final currentState = authBloc.state;
-                  if (currentState is! AuthInitial) {
-                    await authBloc.stream.firstWhere((state) => state is AuthInitial);
-                  }
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                        (route) => false,
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-      ),
       body: RefreshIndicator(
         onRefresh: () async {
           context.read<CourseBloc>().add(const GetCategoriesEvent());
@@ -182,63 +103,62 @@ class _HomePageState extends State<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Carousel Slider
-              if (DummyData.carouselImages.isNotEmpty)
-                Column(
+                const Column(
                   children: [
-                    CarouselSlider(
-                      items: DummyData.carouselImages.map((imageUrl) {
-                        return Builder(
-                          builder: (BuildContext context) {
-                            return Container(
-                              width: MediaQuery.of(context).size.width,
-                              margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                image: DecorationImage(
-                                  image: NetworkImage(imageUrl),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                      options: CarouselOptions(
-                        height: 200.0,
-                        autoPlay: true,
-                        enlargeCenterPage: true,
-                        aspectRatio: 16 / 9,
-                        autoPlayCurve: Curves.fastOutSlowIn,
-                        enableInfiniteScroll: true,
-                        autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                        viewportFraction: 0.8,
-                        onPageChanged: (index, reason) {
-                          if (mounted) {
-                            setState(() {
-                              _currentCarouselIndex = index;
-                            });
-                          }
-                        },
-                      ),
-                    ),
+                    // CarouselSlider(
+                    //   items: DummyData.carouselImages.map((imageUrl) {
+                    //     return Builder(
+                    //       builder: (BuildContext context) {
+                    //         return Container(
+                    //           width: MediaQuery.of(context).size.width,
+                    //           margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                    //           decoration: BoxDecoration(
+                    //             borderRadius: BorderRadius.circular(10),
+                    //             image: DecorationImage(
+                    //               image: NetworkImage(imageUrl),
+                    //               fit: BoxFit.cover,
+                    //             ),
+                    //           ),
+                    //         );
+                    //       },
+                    //     );
+                    //   }).toList(),
+                    //   options: CarouselOptions(
+                    //     height: 200.0,
+                    //     autoPlay: true,
+                    //     enlargeCenterPage: true,
+                    //     aspectRatio: 16 / 9,
+                    //     autoPlayCurve: Curves.fastOutSlowIn,
+                    //     enableInfiniteScroll: true,
+                    //     autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                    //     viewportFraction: 0.8,
+                    //     onPageChanged: (index, reason) {
+                    //       if (mounted) {
+                    //         setState(() {
+                    //           _currentCarouselIndex = index;
+                    //         });
+                    //       }
+                    //     },
+                    //   ),
+                    // ),
                     // Carousel Indicators
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: DummyData.carouselImages.asMap().entries.map((entry) {
-                        return Container(
-                          width: 8.0,
-                          height: 8.0,
-                          margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentCarouselIndex == entry.key
-                                ? Theme.of(context).colorScheme.primary
-                                : Colors.grey.withOpacity(0.5),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 10),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.center,
+                    //   children: DummyData.carouselImages.asMap().entries.map((entry) {
+                    //     return Container(
+                    //       width: 8.0,
+                    //       height: 8.0,
+                    //       margin: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 2.0),
+                    //       decoration: BoxDecoration(
+                    //         shape: BoxShape.circle,
+                    //         color: _currentCarouselIndex == entry.key
+                    //             ? Theme.of(context).colorScheme.primary
+                    //             : Colors.grey.withOpacity(0.5),
+                    //       ),
+                    //     );
+                    //   }).toList(),
+                    // ),
+                    SizedBox(height: 10),
                   ],
                 ),
 
@@ -369,19 +289,25 @@ class _HomePageState extends State<HomePage> {
             current is CategoryLoaded ||
             current is CategoryError,
         builder: (context, state) {
+          // Check cache first to update _allCategories if not already set
+          if (_allCategories.isEmpty && context.read<CourseBloc>().cachedCategories != null) {
+            _allCategories = context.read<CourseBloc>().cachedCategories!;
+            _filterCategories();
+          }
+
           if (state is CategoryListLoading && _allCategories.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is CategoryError && _allCategories.isEmpty) {
             return Center(
-              child: Text('Error loading categories: ${state.message}'.tr()), // Localized error
+              child: Text('Error loading categories: ${state.message}'.tr()),
             );
           }
           if (_filteredCategories.isEmpty && _searchQuery.isNotEmpty) {
-            return Center(child: Text('No categories match your search.'.tr())); // Localized message
+            return Center(child: Text('No categories match your search.'.tr()));
           }
           if (_allCategories.isEmpty && state is! CategoryListLoading) {
-            return Center(child: Text('No categories found.'.tr())); // Localized message
+            return Center(child: Text('No categories found.'.tr()));
           }
 
           return _buildCategoriesGrid(_filteredCategories);
@@ -389,7 +315,6 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildCategoriesGrid(List<Category> categories) {
     return GridView.builder(
       shrinkWrap: true,

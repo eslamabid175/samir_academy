@@ -16,7 +16,9 @@ import 'package:samir_academy/features/onboarding/presentation/pages/onboarding_
 import 'package:samir_academy/injection_container.dart';
 import 'package:samir_academy/presentation/pages/home_page.dart';
 import 'package:samir_academy/presentation/pages/settings_page.dart';
-import 'package:samir_academy/main.dart'; // لاستيراد SplashScreen
+import 'package:samir_academy/main.dart';
+
+import '../../presentation/pages/pre_home.dart'; // لاستيراد SplashScreen
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -28,7 +30,8 @@ class AppRouter {
     switch (settings.name) {
       case '/':
         return MaterialPageRoute(builder: (_) => const SplashScreen());
-
+case AppRoutes.preHome:
+        return MaterialPageRoute(builder: (_) => const PreHome());
       case AppRoutes.home:
         return MaterialPageRoute(builder: (_) => HomePage());
 
