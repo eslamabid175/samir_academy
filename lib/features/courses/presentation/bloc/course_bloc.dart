@@ -4,7 +4,11 @@ import 'package:samir_academy/core/usecases/usecase.dart';
 import 'package:samir_academy/features/courses/domain/entities/lesson.dart';
 import 'package:samir_academy/features/courses/domain/entities/unit.dart';
 import '../../../../core/error/failures.dart';
+import '../../../auth/domain/usecases/sign_in_with_google.dart';
+import '../../domain/entities/category.dart';
 import '../../domain/entities/course.dart';
+import '../../domain/usecases/add_category.dart';
+import '../../domain/usecases/get_categories.dart';
 import '../../domain/usecases/get_courses.dart';
 import '../../domain/usecases/get_course_details.dart';
 import '../../domain/usecases/get_units.dart';
@@ -26,6 +30,8 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
   final AddCourse addCourse; // Added
   final AddUnit addUnit; // Added
   final AddLesson addLesson; // Added
+  final GetCategories getCategories; // Added
+  final AddCategory addCategory;     // Added
 
   // --- Cache Refactoring ---
   // Cache for course lists per category
@@ -35,6 +41,7 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
   Course? _lastLoadedCourse;
   List<Unit>? _lastLoadedUnits;
   String? _lastLoadedCourseIdForUnits;
+  List<Category>? _categoriesCache; // Added
 
   // Cache for unit details (lessons)
   List<Lesson>? _lastLoadedLessons;
@@ -55,6 +62,9 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     required this.getUnits,
     required this.getLessons,
     required this.getLessonDetails,
+    // Category Dependencies
+    required this.getCategories, // Added
+    required this.addCategory,
     required this.addCourse, // Added
     required this.addUnit, // Added
     required this.addLesson, // Added
@@ -66,7 +76,51 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     on<GetLessonDetailsEvent>(_onGetLessonDetails);
     on<AddCourseEvent>(_onAddCourse); // Added handler registration
     on<AddUnitEvent>(_onAddUnit); // Added handler registration
-    on<AddLessonEvent>(_onAddLesson); // Added handler registration
+    on<AddLessonEvent>(_onAddLesson); //
+
+    // Category Event Handlers
+    on<GetCategoriesEvent>(_onGetCategories); // Added
+    on<AddCategoryEvent>(_onAddCategory);     // Added
+  }
+// --- Category Event Handlers ---
+  Future<void> _onGetCategories(
+      GetCategoriesEvent event, Emitter<CourseState> emit) async {
+    // Check cache first
+    if (_categoriesCache != null) {
+      emit(CategoryLoaded(categories: _categoriesCache!));
+      return;
+    }
+
+    emit(CategoryListLoading());
+    final result = await getCategories(NoParams()); // Use NoParams for GetCategories
+    result.fold(
+          (failure) => emit(CategoryError(message: failure.message)),
+          (categories) {
+        _categoriesCache = categories; // Store in cache
+        emit(CategoryLoaded(categories: categories));
+      },
+    );
+  }
+
+  Future<void> _onAddCategory(
+      AddCategoryEvent event, Emitter<CourseState> emit) async {
+    emit(CourseActionLoading()); // Use generic action loading state
+    final result = await addCategory(AddCategoryParams(
+      name: event.category.name,
+      imageUrl: event.category.imageUrl,
+    ));
+    result.fold(
+          (failure) {
+        print('Failed to add category: ${failure.message}');
+        emit(CourseActionError(message: failure.message)); // Use generic action error state
+      },
+          (_) {
+        _categoriesCache = null; // Invalidate category cache
+        emit(CourseActionSuccess()); // Use generic action success state
+        // Optionally, immediately fetch categories again or let UI trigger it
+        // add(const GetCategoriesEvent());
+      },
+    );
   }
 
   Future<void> _onGetCourses(

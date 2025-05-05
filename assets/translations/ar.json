@@ -59,5 +59,10 @@
   "lesson_title": "عنوان الدرس",
   "lesson_description": "وصف الدرس",
   "youtube_video_id": "معرف فيديو يوتيوب",
-  "lesson_order_label": "ترتيب الدرس"
+  "lesson_order_label": "ترتيب الدرس",
+  "Search Categories...": "بحث في الفئات...",
+  "Categories": "الفئات",
+  "Chat with AI": "الدردشة مع الذكاء الاصطناعي",
+  "No categories found.": "لم يتم العثور على فئات.",
+  "Add Category": "إضافة فئة"
 }

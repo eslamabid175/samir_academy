@@ -9,8 +9,8 @@ import 'package:samir_academy/features/courses/presentation/bloc/course_bloc.dar
 
 class CoursesListScreen extends StatefulWidget {
   final String categoryId; // CategoryId is passed
-
-  const CoursesListScreen({Key? key, required this.categoryId}) : super(key: key);
+final String categoryName;
+  const CoursesListScreen({Key? key, required this.categoryId, required this.categoryName}) : super(key: key);
 
   @override
   _CoursesListScreenState createState() => _CoursesListScreenState();
@@ -35,7 +35,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> with AutomaticKee
     return Scaffold(
       appBar: AppBar(
         // TODO: Get category name instead of ID for title
-        title: Text('courses_in_category'.tr(args: [widget.categoryId])), 
+        title: Text(widget.categoryName),
       ),
       body: BlocBuilder<CourseBloc, CourseState>(
         builder: (context, courseState) {

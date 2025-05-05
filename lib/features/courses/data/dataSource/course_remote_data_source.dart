@@ -3,6 +3,8 @@ import 'package:samir_academy/features/courses/data/models/course_model.dart';
 import 'package:samir_academy/features/courses/data/models/lesson_model.dart';
 import 'package:samir_academy/features/courses/data/models/unit_model.dart';
 
+import '../models/category_model.dart';
+
 abstract class CourseRemoteDataSource {
   Future<List<CourseModel>> getCourses(String categoryId); // Changed categoryId to non-nullable based on usage
   Future<CourseModel> getCourseDetails(String courseId);
@@ -14,10 +16,13 @@ abstract class CourseRemoteDataSource {
   Future<void> addCourse(CourseModel course);
   Future<void> addUnit(UnitModel unit);
   Future<void> addLesson(LessonModel lesson);
+  Future<List<CategoryModel>> getCategories();
+  Future<void> addCategory(CategoryModel category);
 }
 
 class CourseRemoteDataSourceImpl implements CourseRemoteDataSource {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String _collectionPath = 'categories'; // Define collection name
 
   @override
   Future<List<CourseModel>> getCourses(String categoryId) async {
@@ -254,4 +259,58 @@ class CourseRemoteDataSourceImpl implements CourseRemoteDataSource {
       throw Exception('Failed to add lesson: $e');
     }
   }
+
+
+  @override
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      final snapshot = await _firestore.collection(_collectionPath).orderBy('name').get(); // Order by name for consistency
+      return snapshot.docs
+          .map((doc) => CategoryModel.fromSnapshot(doc.data() as Map<String, dynamic>, doc.id))
+          .toList();
+    } catch (e) {
+      print('Error fetching categories: $e');
+      // Consider throwing a specific exception type if needed
+      throw Exception('Failed to fetch categories: $e');
+    }
+  }
+
+  @override
+  Future<void> addCategory(CategoryModel category) async {
+    try {
+      if (category.name.isEmpty) {
+        throw Exception('Category name cannot be empty');
+      }
+      if (category.imageUrl.isEmpty || !Uri.parse(category.imageUrl).isAbsolute) {
+        throw Exception('A valid category image URL is required');
+      }
+
+      // Check if a category with the same name already exists (case-insensitive check)
+      final existingCategories = await _firestore
+          .collection(_collectionPath)
+          .where('name_lowercase', isEqualTo: category.name.toLowerCase())
+          .limit(1)
+          .get();
+
+      if (existingCategories.docs.isNotEmpty) {
+        throw Exception('A category with this name already exists.');
+      }
+
+      // Add category name in lowercase for case-insensitive checks
+      final categoryData = category.toJson();
+      categoryData['name_lowercase'] = category.name.toLowerCase();
+
+      final docRef = await _firestore.collection(_collectionPath).add(categoryData);
+      print('Category added successfully with ID: ${docRef.id}');
+
+    } on FirebaseException catch (e) {
+      print('FirebaseException adding category: ${e.code} - ${e.message}');
+      // Handle specific Firebase errors if necessary
+      throw Exception('Failed to add category: ${e.message}');
+    } catch (e) {
+      print('Error adding category: $e');
+      throw Exception('Failed to add category: $e');
+    }
+  }
+
 }

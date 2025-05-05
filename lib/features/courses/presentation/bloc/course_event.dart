@@ -102,3 +102,18 @@ class AddLessonEvent extends CourseEvent {
   List<Object?> get props => [courseId, unitId, lesson];
 }
 
+// --- New Events for Categories ---
+class GetCategoriesEvent extends CourseEvent {
+  const GetCategoriesEvent(); // No parameters needed to get all categories
+}
+
+class AddCategoryEvent extends CourseEvent {
+  final Category category; // Use the Category entity from category.dart
+
+  const AddCategoryEvent({required this.category});
+
+  @override
+  List<Object> get props => [category];
+}
+
+

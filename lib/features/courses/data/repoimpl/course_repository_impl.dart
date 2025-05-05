@@ -4,9 +4,11 @@ import 'package:samir_academy/features/courses/data/models/lesson_model.dart';
 import 'package:samir_academy/features/courses/data/models/unit_model.dart';
 import 'package:samir_academy/features/courses/domain/entities/lesson.dart';
 import 'package:samir_academy/features/courses/domain/entities/unit.dart' as u;
+import '../../domain/entities/category.dart';
 import '../../domain/entities/course.dart';
 import '../../domain/repositories/course_repository.dart';
 import '../dataSource/course_remote_data_source.dart';
+import '../models/category_model.dart';
 import '../models/course_model.dart';
 
 class CourseRepositoryImpl implements CourseRepository {
@@ -137,6 +139,44 @@ class CourseRepositoryImpl implements CourseRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<Category>>> getCategories() async {
+    try {
+      // TODO: Add network connectivity check if needed
+      final categoryModels = await remoteDataSource.getCategories();
+      // The remote data source returns CategoryModel, which extends Category entity
+      return Right(categoryModels);
+    } on Exception catch (e) {
+      // Catch specific exceptions from data source if defined, otherwise catch generic Exception
+      print('Error in CategoryRepositoryImpl getCategories: $e');
+      return Left(ServerFailure(e.toString())); // Or a more specific failure type
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> addCategory(Category category) async {
+    try {
+      // TODO: Add network connectivity check if needed
+
+      // Convert Category entity to CategoryModel if necessary
+      // If CategoryModel constructor matches Category fields, direct casting might work,
+      // but it's safer to create a new model instance.
+      final categoryModel = CategoryModel(
+        id: category.id, // ID might be ignored by datasource addCategory
+        name: category.name,
+        imageUrl: category.imageUrl,
+      );
+
+      await remoteDataSource.addCategory(categoryModel);
+      return const Right(null); // Indicate success with void
+    } on Exception catch (e) {
+      // Catch specific exceptions from data source if defined, otherwise catch generic Exception
+      print('Error in Course RepositoryImpl addCategory: $e');
+      return Left(ServerFailure(e.toString())); // Or a more specific failure type
+    }
+  }
+
 
 //   @override
 //   Future<Either<Failure, void>> addClassroom(String courseId, String classroomId) {

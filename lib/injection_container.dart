@@ -11,9 +11,11 @@ import 'features/auth/presentation/bloc/auth_bloc.dart';
 import 'features/courses/data/dataSource/course_remote_data_source.dart';
 import 'features/courses/data/repoimpl/course_repository_impl.dart';
 import 'features/courses/domain/repositories/course_repository.dart';
+import 'features/courses/domain/usecases/add_category.dart';
 import 'features/courses/domain/usecases/add_course.dart';
 import 'features/courses/domain/usecases/add_lesson.dart';
 import 'features/courses/domain/usecases/add_unit.dart';
+import 'features/courses/domain/usecases/get_categories.dart';
 import 'features/courses/domain/usecases/get_course_details.dart';
 import 'features/courses/domain/usecases/get_courses.dart';
 import 'features/courses/domain/usecases/get_lesson_details.dart';
@@ -53,6 +55,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => AddCourse(sl()));
   sl.registerLazySingleton(() => AddUnit(sl()));
   sl.registerLazySingleton(() => AddLesson(sl()));
+  sl.registerLazySingleton(() => AddCategory(sl()));
+  sl.registerLazySingleton(() => GetCategories(sl()));
 
   // Register CourseBloc
   sl.registerFactory(() => CourseBloc(
@@ -61,9 +65,12 @@ Future<void> init() async {
         getUnits: sl(),
         getLessons: sl(),
         getLessonDetails: sl(),
+        getCategories: sl(),
         addCourse: sl(),
         addUnit: sl(),
         addLesson: sl(),
+    addCategory: sl(),
+
       ));
 
   // Onboarding Use Cases

@@ -60,6 +60,11 @@
   "lesson_title": "Lesson Title",
   "lesson_description": "Lesson Description",
   "youtube_video_id": "YouTube Video ID",
-  "lesson_order_label": "Lesson Order"
+  "lesson_order_label": "Lesson Order",
+  "Search Categories...": "Search Categories...",
+  "Categories": "Categories",
+  "Chat with AI": "Chat with AI",
+  "No categories found.": "No categories found.",
+  "Add Category": "Add Category"
 
 }

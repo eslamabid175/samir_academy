@@ -52,7 +52,7 @@ class AppRouter {
                 BlocProvider.value(value: sl<CourseBloc>()),
                 BlocProvider.value(value: sl<AuthBloc>()),
               ],
-              child: CoursesListScreen(categoryId: args),
+              child: CoursesListScreen(categoryId: args, categoryName: args),
             ),
           );
         } else {

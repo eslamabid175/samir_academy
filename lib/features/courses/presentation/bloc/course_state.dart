@@ -35,6 +35,7 @@ class CourseLoaded extends CourseState {
 
 // States for Course Details
 class CourseDetailsLoading extends CourseLoading {} // Specific loading for details
+class CategoryListLoading extends CourseState {} // New state for loading categories
 
 class CourseDetailsLoaded extends CourseState {
   final Course course;
@@ -46,6 +47,22 @@ class CourseDetailsLoaded extends CourseState {
   List<Object?> get props => [course, units];
 }
 
+class CategoryLoaded extends CourseState { // New state for loaded categories
+  final List<Category> categories;
+
+  const CategoryLoaded({required this.categories});
+
+  @override
+  List<Object?> get props => [categories];
+}
+class CategoryError extends CourseState { // New error state specific to categories
+  final String message;
+
+  const CategoryError({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
 // States for Unit Details (Lessons List)
 class UnitDetailsLoading extends CourseLoading {} // Specific loading for lessons
 
