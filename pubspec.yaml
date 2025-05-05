@@ -42,7 +42,11 @@ dependencies:
   easy_localization: ^3.0.7
   image_picker: ^0.8.7
   youtube_player_flutter: ^8.1.2
-
+  syncfusion_flutter_pdfviewer:
+  hive:
+  hive_flutter:
+  path_provider:
+  confetti:
 #  flutter_inappwebview: ^5.7.2
 
 
