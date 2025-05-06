@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:samir_academy/presentation/pages/pre_home.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import '../../../../presentation/pages/home_page.dart';
 import '../widgets/onboarding_item.dart';
@@ -50,7 +51,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     await prefs.setBool('onboarding_completed', true);
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomePage()),
+      MaterialPageRoute(builder: (context) =>  const PreHome()),
     );
   }
 

@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:samir_academy/features/auth/domain/entities/user_entity.dart';
 import 'package:samir_academy/features/auth/domain/repositories/auth_repository.dart';
 
@@ -15,51 +14,65 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
+  Future<Either<Failure, UserEntity?>> getCurrentUser() async {
+    try {
+      final userModel = await remoteDataSource.getCurrentUser();
+      // If userModel is null, it means no user is logged in or an error occurred during fetch
+      // Return Right(null) to indicate no authenticated user found
+      return Right(userModel);
+    } catch (e) {
+      // Catch potential exceptions from the data source (though it's designed not to throw here)
+      // Return a failure if an unexpected error occurs
+      return Left(AuthFailure('Failed to check current user status: ${e.toString()}'));
+    }
+  }
+
+  @override
   Future<Either<Failure, UserEntity>> signInWithGoogle() async {
     try {
       final userModel = await remoteDataSource.signInWithGoogle();
-      if (userModel.id.isEmpty || userModel.email.isEmpty) {
-        return Left(AuthFailure('Invalid user data received'));
-      }
       return Right(userModel);
-    } on FirebaseAuthException catch (e) {
-      return Left(AuthFailure(e.message ?? 'Firebase authentication failed'));
+    } on AuthFailure catch (e) {
+      return Left(e);
     } catch (e) {
-      if (e.toString().contains('cancelled')) {
-        return Left(const AuthFailure('Sign-in was cancelled'));
-      }
       return Left(AuthFailure('Authentication failed: ${e.toString()}'));
     }
   }
 
-  // @override
-  // Future<Either<Failure, void>> signOut() async {
-  //   try {
-  //     await remoteDataSource.signOut();
-  //     return const Right(null);
-  //   } catch (e) {
-  //     return Left(AuthFailure('Failed to sign out: ${e.toString()}'));
-  //   }
-  // }
+  @override
+  Future<Either<Failure, void>> signOut() async {
+    try {
+      await remoteDataSource.signOut();
+      return const Right(null);
+    } on AuthFailure catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(AuthFailure('Sign out failed: ${e.toString()}'));
+    }
+  }
 
   @override
   Future<Either<Failure, void>> deleteUser() async {
     try {
-      await remoteDataSource.deleteUSer();
+      await remoteDataSource.deleteUser();
       return const Right(null);
+    } on AuthFailure catch (e) {
+      return Left(e);
     } catch (e) {
       return Left(AuthFailure('Failed to delete user: ${e.toString()}'));
     }
   }
-
 
   @override
   Future<Either<Failure, void>> saveUser(UserEntity user) async {
     try {
       await remoteDataSource.saveUser(user as UserModel);
       return const Right(null);
+    } on AuthFailure catch (e) {
+      return Left(e);
     } catch (e) {
-      return Left(ServerFailure(e.toString()));
+      return Left(ServerFailure('Failed to save user data: ${e.toString()}'));
     }
   }
 }
+

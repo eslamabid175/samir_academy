@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
+import 'package:samir_academy/features/courses/presentation/pages/course_details_screen.dart';
 import '../../domain/entities/course.dart';
-import 'course_detail_page.dart';
 
 class BookmarksPage extends StatelessWidget {
   const BookmarksPage({super.key});
@@ -59,13 +59,13 @@ class BookmarksPage extends StatelessWidget {
                     title: Text(course.title),
                     subtitle: Text(course.description),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CourseDetailPage(),
-                         // builder: (context) => CourseDetailPage(course: course),
-                        ),
-                      );
+                      // Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (context) => CourseDetailsScreen(courseId: courseId),
+                      //    // builder: (context) => CourseDetailPage(course: course),
+                      //   ),
+                      // );
                     },
                   );
                 },

@@ -8,4 +8,8 @@ abstract class AuthEvent extends Equatable {
 }
 
 class SignInWithGoogleEvent extends AuthEvent {}
+
 class LogOutEvent extends AuthEvent {}
+
+class CheckAuthStatusEvent extends AuthEvent {} // Added event
+

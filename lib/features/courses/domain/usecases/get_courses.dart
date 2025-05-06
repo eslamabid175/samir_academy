@@ -1,18 +1,26 @@
 import 'package:dartz/dartz.dart';
-
-import '../../../../core/error/failures.dart';
-import '../../../../core/usecases/usecase.dart';
-import '../../../auth/domain/usecases/sign_in_with_google.dart';
+import 'package:equatable/equatable.dart';
+import 'package:samir_academy/core/error/failures.dart';
+import 'package:samir_academy/core/usecases/usecase.dart';
 import '../entities/course.dart';
 import '../repositories/course_repository.dart';
 
-class GetCourses implements UseCase<List<Course>, NoParams> {
+class GetCourses implements UseCase<List<Course>, GetCoursesParams> {
   final CourseRepository repository;
 
   GetCourses(this.repository);
 
   @override
-  Future<Either<Failure, List<Course>>> call(NoParams params) async {
-    return await repository.getCourses();
+  Future<Either<Failure, List<Course>>> call(GetCoursesParams params) async {
+    return await repository.getCourses(categoryId: params.categoryId);
   }
+}
+
+class GetCoursesParams extends Equatable {
+  final String? categoryId;
+
+  const GetCoursesParams({this.categoryId});
+
+  @override
+  List<Object?> get props => [categoryId];
 }

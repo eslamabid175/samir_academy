@@ -3,7 +3,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import '../../domain/entities/course.dart';
-import 'course_detail_page.dart';
 
 class MyCoursesPage extends StatelessWidget {
   const MyCoursesPage({super.key});
@@ -60,13 +59,13 @@ class MyCoursesPage extends StatelessWidget {
                     title: Text(course.title),
                     subtitle: Text(course.description),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CourseDetailPage(),
-                     //     builder: (context) => CourseDetailPage(course: course),
-                        ),
-                      );
+                     //  Navigator.push(
+                     //    context,
+                     //    MaterialPageRoute(
+                     //      builder: (context) => CourseDetailPage(),
+                     // //     builder: (context) => CourseDetailPage(course: course),
+                     //    ),
+                     //  );
                     },
                   );
                 },

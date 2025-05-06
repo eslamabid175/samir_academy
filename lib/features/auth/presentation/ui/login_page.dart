@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../presentation/pages/home_page.dart';
+import '../../../../presentation/pages/pre_home.dart';
 import '../bloc/auth_bloc.dart';
 
 
@@ -10,14 +11,14 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('E-Learning App')),
+      appBar: AppBar(title: const Text('Samir Academy')),
       body: Center(
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthAuthenticated) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
+                MaterialPageRoute(builder: (context) => const PreHome()),
               );
             } else if (state is AuthError) {
               ScaffoldMessenger.of(context).showSnackBar(
