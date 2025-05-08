@@ -17,6 +17,9 @@ abstract class BooksRemoteDataSource {
   Future<void> updateNote(NoteModel note);
   Future<void> removeNote(String userId, String bookId, String noteId);
   Future<void> updateReadingProgress(String userId, String bookId, int currentPage, int totalPages);
+  Future<BookModel> addBook(BookModel book);
+  Future<void> updateBook(BookModel book);
+  Future<void> deleteBook(String bookId);
 }
 
 class BooksRemoteDataSourceImpl implements BooksRemoteDataSource {
@@ -199,4 +202,42 @@ class BooksRemoteDataSourceImpl implements BooksRemoteDataSource {
       throw ServerFailure(  e.toString());
     }
   }
+
+  @override
+  Future<BookModel> addBook(BookModel book) async {
+    try {
+      final docRef = await firestore
+          .collection(AppConstants.booksCollection)
+          .add(book.toJson());
+
+      return book.copyWith(id: docRef.id);
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> updateBook(BookModel book) async {
+    try {
+      await firestore
+          .collection(AppConstants.booksCollection)
+          .doc(book.id)
+          .update(book.toJson());
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
+  Future<void> deleteBook(String bookId) async {
+    try {
+      await firestore
+          .collection(AppConstants.booksCollection)
+          .doc(bookId)
+          .delete();
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
 }
+

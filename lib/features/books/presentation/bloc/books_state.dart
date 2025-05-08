@@ -1,4 +1,3 @@
-
 part of 'books_bloc.dart';
 
 abstract class BooksState extends Equatable {
@@ -86,4 +85,31 @@ class BooksErrorState extends BooksState {
 
   @override
   List<Object?> get props => [message];
+}
+
+class BookAddedState extends BooksState {
+  final Book book;
+
+  const BookAddedState({required this.book});
+
+  @override
+  List<Object?> get props => [book];
+}
+
+class BookUpdatedState extends BooksState {
+  final Book book;
+
+  const BookUpdatedState({required this.book});
+
+  @override
+  List<Object?> get props => [book];
+}
+
+class BookDeletedState extends BooksState {
+  final String bookId;
+
+  const BookDeletedState({required this.bookId});
+
+  @override
+  List<Object?> get props => [bookId];
 }

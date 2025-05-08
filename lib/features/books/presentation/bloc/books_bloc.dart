@@ -7,6 +7,9 @@ import '../../domain/usecases/get_books_usecase.dart';
 import '../../domain/usecases/get_book_details_usecase.dart';
 import '../../domain/usecases/add_bookmark_usecase.dart';
 import '../../domain/usecases/add_note_usecase.dart';
+import '../../domain/usecases/add_book_usecase.dart';
+import '../../domain/usecases/update_book_usecase.dart';
+import '../../domain/usecases/delete_book_usecase.dart';
 
 part 'books_event.dart';
 part 'books_state.dart';
@@ -16,12 +19,18 @@ class BooksBloc extends Bloc<BooksEvent, BooksState> {
   final GetBookDetailsUseCase getBookDetailsUseCase;
   final AddBookmarkUseCase addBookmarkUseCase;
   final AddNoteUseCase addNoteUseCase;
+  final AddBookUseCase addBookUseCase;
+  final UpdateBookUseCase updateBookUseCase;
+  final DeleteBookUseCase deleteBookUseCase;
 
   BooksBloc({
     required this.getBooksUseCase,
     required this.getBookDetailsUseCase,
     required this.addBookmarkUseCase,
     required this.addNoteUseCase,
+    required this.addBookUseCase,
+    required this.updateBookUseCase,
+    required this.deleteBookUseCase,
   }) : super(BooksInitialState()) {
     on<GetBooksEvent>(_onGetBooks);
     on<GetBookDetailsEvent>(_onGetBookDetails);
@@ -31,6 +40,9 @@ class BooksBloc extends Bloc<BooksEvent, BooksState> {
     on<UpdateNoteEvent>(_onUpdateNote);
     on<RemoveNoteEvent>(_onRemoveNote);
     on<UpdateReadingProgressEvent>(_onUpdateReadingProgress);
+    on<AddBookEvent>(_onAddBook);
+    on<UpdateBookEvent>(_onUpdateBook);
+    on<DeleteBookEvent>(_onDeleteBook);
   }
 
   Future<void> _onGetBooks(
@@ -155,4 +167,59 @@ class BooksBloc extends Bloc<BooksEvent, BooksState> {
       progress: event.totalPages > 0 ? (event.currentPage / event.totalPages) * 100 : 0,
     ));
   }
+
+  Future<void> _onAddBook(
+    AddBookEvent event,
+    Emitter<BooksState> emit,
+  ) async {
+    emit(BooksLoadingState());
+    
+    final params = AddBookParams(book: event.book);
+    final result = await addBookUseCase(params);
+    
+    result.fold(
+      (failure) => emit(BooksErrorState(message: failure.message)),
+      (book) {
+        emit(BookAddedState(book: book));
+        add(GetBooksEvent()); // Refresh the books list
+      },
+    );
+  }
+
+  Future<void> _onUpdateBook(
+    UpdateBookEvent event,
+    Emitter<BooksState> emit,
+  ) async {
+    emit(BooksLoadingState());
+    
+    final params = UpdateBookParams(book: event.book);
+    final result = await updateBookUseCase(params);
+    
+    result.fold(
+      (failure) => emit(BooksErrorState(message: failure.message)),
+      (_) {
+        emit(BookUpdatedState(book: event.book));
+        add(GetBooksEvent()); // Refresh the books list
+      },
+    );
+  }
+
+  Future<void> _onDeleteBook(
+    DeleteBookEvent event,
+    Emitter<BooksState> emit,
+  ) async {
+    emit(BooksLoadingState());
+    
+    final params = DeleteBookParams(bookId: event.bookId);
+    final result = await deleteBookUseCase(params);
+    
+    result.fold(
+      (failure) => emit(BooksErrorState(message: failure.message)),
+      (_) {
+        emit(BookDeletedState(bookId: event.bookId));
+        add(GetBooksEvent()); // Refresh the books list
+      },
+    );
+  }
 }
+

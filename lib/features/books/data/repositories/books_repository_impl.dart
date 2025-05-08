@@ -255,4 +255,57 @@ class BooksRepositoryImpl implements BooksRepository {
       return Left(ServerFailure(  e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, Book>> addBook(Book book) async {
+    try {
+      final bookModel = BookModel.fromEntity(book);
+      final addedBook = await remoteDataSource.addBook(bookModel);
+      
+      // Update the local cache
+      final cachedBooks = await localDataSource.getCachedBooks();
+      cachedBooks.add(addedBook);
+      await localDataSource.cacheBooks(cachedBooks);
+      
+      return Right(addedBook);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateBook(Book book) async {
+    try {
+      final bookModel = BookModel.fromEntity(book);
+      await remoteDataSource.updateBook(bookModel);
+      
+      // Update the local cache
+      final cachedBooks = await localDataSource.getCachedBooks();
+      final index = cachedBooks.indexWhere((b) => b.id == book.id);
+      if (index != -1) {
+        cachedBooks[index] = bookModel;
+        await localDataSource.cacheBooks(cachedBooks);
+      }
+      
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteBook(String bookId) async {
+    try {
+      await remoteDataSource.deleteBook(bookId);
+      
+      // Update the local cache
+      final cachedBooks = await localDataSource.getCachedBooks();
+      cachedBooks.removeWhere((book) => book.id == bookId);
+      await localDataSource.cacheBooks(cachedBooks);
+      
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

@@ -14,10 +14,13 @@ import 'features/books/data/datasources/books_local_data_source.dart';
 import 'features/books/data/datasources/books_remote_data_source.dart';
 import 'features/books/data/repositories/books_repository_impl.dart';
 import 'features/books/domain/repositories/books_repository.dart';
+import 'features/books/domain/usecases/add_book_usecase.dart';
 import 'features/books/domain/usecases/add_bookmark_usecase.dart';
 import 'features/books/domain/usecases/add_note_usecase.dart';
+import 'features/books/domain/usecases/delete_book_usecase.dart';
 import 'features/books/domain/usecases/get_book_details_usecase.dart';
 import 'features/books/domain/usecases/get_books_usecase.dart';
+import 'features/books/domain/usecases/update_book_usecase.dart';
 import 'features/books/presentation/bloc/books_bloc.dart';
 import 'features/courses/data/dataSource/course_remote_data_source.dart';
 import 'features/courses/data/repoimpl/course_repository_impl.dart';
@@ -56,12 +59,15 @@ Future<void> init() async {
   sl.registerLazySingleton<Box>(() => Hive.box('local_storage')); // Replace 'local_storage' with your box name
 
   // Auth Use Cases
+  // registerLazySingleton is used to register a singleton instance of a class.
+  // and thats mean that the same instance will be used throughout the app.
   sl.registerLazySingleton(() => SignInWithGoogle(sl()));
   sl.registerLazySingleton(() => SaveUser(sl()));
   sl.registerLazySingleton(() => SignOut(sl()));
   sl.registerLazySingleton(() => GetCurrentUser(sl()));
 
   // Register AuthBloc
+  // The AuthBloc is registered as a factory, meaning a new instance will be created each time it's requested.
   sl.registerFactory(() => AuthBloc(
     signInWithGoogle: sl(),
     saveUser: sl(),
@@ -125,6 +131,9 @@ Future<void> init() async {
     getBookDetailsUseCase: sl(),
     addBookmarkUseCase: sl(),
     addNoteUseCase: sl(),
+    addBookUseCase: sl(), // Add this
+    updateBookUseCase: sl(), // Add this
+    deleteBookUseCase: sl(), // Add this
   ));
 
   // Use cases
@@ -132,6 +141,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetBookDetailsUseCase(sl()));
   sl.registerLazySingleton(() => AddBookmarkUseCase(sl()));
   sl.registerLazySingleton(() => AddNoteUseCase(sl()));
+  sl.registerLazySingleton(() => AddBookUseCase(sl())); // Add this
+  sl.registerLazySingleton(() => UpdateBookUseCase(sl())); // Add this
+  sl.registerLazySingleton(() => DeleteBookUseCase(sl())); // Add this
 
   // Repository
   sl.registerLazySingleton<BooksRepository>(

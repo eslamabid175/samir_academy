@@ -41,6 +41,9 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
         BlocProvider(create: (_) => di.sl<CourseBloc>()),
+        //..add(LoadSettings())), means that the LoadSettings event is dispatched when the SettingsBloc is created.
+        // This is a good practice to load initial settings when the app starts.
+        // This will trigger the LoadSettings event when the SettingsBloc is created.
         BlocProvider(create: (_) => di.sl<SettingsBloc>()..add(LoadSettings())),
         BlocProvider(create: (_) => di.sl<BooksBloc>()),
         BlocProvider(create: (_) => di.sl<QuizzesBloc>()),

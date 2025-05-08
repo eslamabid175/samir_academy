@@ -17,4 +17,7 @@ abstract class BooksRepository {
   Future<Either<Failure, void>> removeNote(String userId, String bookId, String noteId);
   Future<Either<Failure, void>> updateReadingProgress(String userId, String bookId, int currentPage, int totalPages);
   Future<Either<Failure, Map<String, dynamic>>> getReadingProgress(String userId, String bookId);
+  Future<Either<Failure, Book>> addBook(Book book);
+  Future<Either<Failure, void>> updateBook(Book book);
+  Future<Either<Failure, void>> deleteBook(String bookId);
 }
