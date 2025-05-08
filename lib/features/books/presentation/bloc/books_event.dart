@@ -1,4 +1,3 @@
-
 part of 'books_bloc.dart';
 
 abstract class BooksEvent extends Equatable {
@@ -126,3 +125,31 @@ class UpdateReadingProgressEvent extends BooksEvent {
   @override
   List<Object?> get props => [userId, bookId, currentPage, totalPages];
 }
+
+class AddBookEvent extends BooksEvent {
+  final Book book;
+
+  const AddBookEvent({required this.book});
+
+  @override
+  List<Object?> get props => [book];
+}
+
+class UpdateBookEvent extends BooksEvent {
+  final Book book;
+
+  const UpdateBookEvent({required this.book});
+
+  @override
+  List<Object?> get props => [book];
+}
+
+class DeleteBookEvent extends BooksEvent {
+  final String bookId;
+
+  const DeleteBookEvent({required this.bookId});
+
+  @override
+  List<Object?> get props => [bookId];
+}
+

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -10,6 +11,7 @@ import '../../domain/entities/bookmark.dart';
 import '../../domain/entities/note.dart';
 import '../bloc/books_bloc.dart';
 import '../widgets/book_notes_widget.dart';
+import '../../../../core/utils/pdf_utils.dart';
 
 class BookReaderPage extends StatefulWidget {
   final String bookId;
@@ -40,10 +42,10 @@ class _BookReaderPageState extends State<BookReaderPage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Get current user ID - in a real app, get this from auth service
     final userId = 'current_user_id';
-    
+
     // Load book details when the page is loaded
     BlocProvider.of<BooksBloc>(context).add(
       GetBookDetailsEvent(
@@ -62,7 +64,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
   void _updateReadingProgress() {
     if (_book != null) {
       final userId = 'current_user_id';
-      
+
       BlocProvider.of<BooksBloc>(context).add(
         UpdateReadingProgressEvent(
           userId: userId,
@@ -81,7 +83,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
         builder: (context) {
           String title = 'Page $_currentPage';
           String description = '';
-          
+
           return AlertDialog(
             title: const Text('Add Bookmark'),
             content: Column(
@@ -120,7 +122,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
               ElevatedButton(
                 onPressed: () {
                   final userId = 'current_user_id';
-                  
+
                   BlocProvider.of<BooksBloc>(context).add(
                     AddBookmarkEvent(
                       userId: userId,
@@ -130,9 +132,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
                       description: description,
                     ),
                   );
-                  
+
                   Navigator.pop(context);
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Bookmark added successfully'),
@@ -155,7 +157,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
         builder: (context) {
           String content = '';
           String selectedColor = '#FFFF8D'; // Default yellow color
-          
+
           return AlertDialog(
             title: const Text('Add Note'),
             content: Column(
@@ -206,7 +208,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 onPressed: () {
                   if (content.isNotEmpty) {
                     final userId = 'current_user_id';
-                    
+
                     BlocProvider.of<BooksBloc>(context).add(
                       AddNoteEvent(
                         userId: userId,
@@ -216,9 +218,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
                         color: selectedColor,
                       ),
                     );
-                    
+
                     Navigator.pop(context);
-                    
+
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Note added successfully'),
@@ -275,6 +277,10 @@ class _BookReaderPageState extends State<BookReaderPage> {
             }
             return const Text('Book Reader');
           },
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
@@ -357,18 +363,66 @@ class _BookReaderPageState extends State<BookReaderPage> {
         builder: (context, state) {
           if (state is BookDetailsLoadingState) {
             return const LoadingWidget();
-          } else if (_book != null) {
-            return _buildReader();
           } else if (state is BooksErrorState) {
             return Center(
-              child: Text(
-                'Error: ${state.message}',
-                style: const TextStyle(color: Colors.red),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 60,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Error: ${state.message}',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontSize: 16,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      // Retry loading the book
+                      final userId = 'current_user_id'; // Replace with actual user ID
+                      BlocProvider.of<BooksBloc>(context).add(
+                        GetBookDetailsEvent(
+                          userId: userId,
+                          bookId: widget.bookId,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
               ),
             );
+          } else if (_book != null) {
+            return _buildReader();
           } else {
-            return const Center(
-              child: Text('No book details available'),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'No book details available',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
             );
           }
         },
@@ -399,40 +453,63 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   setState(() {
                     _currentPage = details.newPageNumber;
                   });
-                  
-                  // Update reading progress periodically
                   _updateReadingProgress();
                 },
+                onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error loading PDF: ${details.error}'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 5),
+                    ),
+                  );
+                },
+                enableDoubleTapZooming: true,
+                enableTextSelection: true,
+                interactionMode: PdfInteractionMode.pan,
+                initialZoomLevel: 1.0,
+                pageSpacing: 0,
+                canShowPasswordDialog: true,
               ),
-              
-              // Show notes for current page as overlay
-              if (_notes.isNotEmpty)
-                Positioned(
-                  bottom: 16,
-                  right: 16,
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.comment, color: Colors.white),
-                      onPressed: () {
-                        setState(() {
-                          _isNotesPanelOpen = true;
-                          _isBookmarksPanelOpen = false;
-                        });
-                      },
-                      tooltip: 'View notes for this page',
-                    ),
-                  ),
-                ),
+
+              // Loading indicator
+              FutureBuilder<bool>(
+                future: PdfUtils.checkPdfUrl(_book!.fileUrl),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+                  if (snapshot.hasError || (snapshot.hasData && !snapshot.data!)) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load PDF file',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () => setState(() {}), // Retry loading
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ],
           ),
         ),
-        
+
         // Bookmarks panel
         if (_isBookmarksPanelOpen)
           SizedBox(
@@ -511,7 +588,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
               ),
             ),
           ),
-        
+
         // Notes panel
         if (_isNotesPanelOpen)
           SizedBox(
@@ -590,7 +667,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
             valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
           ),
           const SizedBox(height: 8),
-          
+
           // Page navigation
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -604,13 +681,13 @@ class _BookReaderPageState extends State<BookReaderPage> {
                       }
                     : null,
               ),
-              
+
               // Page indicator
               Text(
                 'Page $_currentPage of $_totalPages',
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
-              
+
               // Next page button
               IconButton(
                 icon: const Icon(Icons.navigate_next),
@@ -627,3 +704,4 @@ class _BookReaderPageState extends State<BookReaderPage> {
     );
   }
 }
+

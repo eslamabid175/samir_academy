@@ -96,4 +96,36 @@ class BookModel extends Book {
       updatedAt: book.updatedAt,
     );
   }
+
+  BookModel copyWith({
+    String? id,
+    String? title,
+    String? author,
+    String? description,
+    String? coverImage,
+    String? fileUrl,
+    int? pageCount,
+    double? rating,
+    List<String>? categories,
+    bool? isFeatured,
+    DateTime? publishedDate,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return BookModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      description: description ?? this.description,
+      coverImage: coverImage ?? this.coverImage,
+      fileUrl: fileUrl ?? this.fileUrl,
+      pageCount: pageCount ?? this.pageCount,
+      rating: rating ?? this.rating,
+      categories: categories ?? this.categories,
+      isFeatured: isFeatured ?? this.isFeatured,
+      publishedDate: publishedDate ?? this.publishedDate,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:uuid/uuid.dart';
+import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
+import '../widgets/book_form_dialog.dart';  // Add this import
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -56,6 +59,17 @@ class _BooksPageState extends State<BooksPage> {
           }
         },
       ),
+      floatingActionButton: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, authState) {
+          if (authState is AuthAuthenticated && authState.user.isAdmin) {
+            return FloatingActionButton(
+              onPressed: () => _showBookFormDialog(context),
+              child: const Icon(Icons.add),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 
@@ -78,7 +92,7 @@ class _BooksPageState extends State<BooksPage> {
             ),
           ),
         ),
-        
+
         // Featured books horizontal list
         SliverToBoxAdapter(
           child: SizedBox(
@@ -97,7 +111,7 @@ class _BooksPageState extends State<BooksPage> {
             ),
           ),
         ),
-        
+
         // All books section
         SliverToBoxAdapter(
           child: Padding(
@@ -114,7 +128,7 @@ class _BooksPageState extends State<BooksPage> {
             ),
           ),
         ),
-        
+
         // All books grid
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: AppConstants.defaultPadding),
@@ -136,7 +150,7 @@ class _BooksPageState extends State<BooksPage> {
             ),
           ),
         ),
-        
+
         // Bottom padding
         const SliverToBoxAdapter(
           child: SizedBox(height: 24),
@@ -173,7 +187,7 @@ class _BooksPageState extends State<BooksPage> {
               ),
             ),
             const SizedBox(height: 8),
-            
+
             // Book title
             Text(
               book.title,
@@ -184,7 +198,7 @@ class _BooksPageState extends State<BooksPage> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            
+
             // Book author
             Text(
               book.author,
@@ -203,6 +217,13 @@ class _BooksPageState extends State<BooksPage> {
   Widget _buildBookCard(Book book) {
     return GestureDetector(
       onTap: () => _navigateToBookReader(book),
+      onLongPress: () {
+        // Check admin status using BlocBuilder
+        final authState = context.read<AuthBloc>().state;
+        if (authState is AuthAuthenticated && authState.user.isAdmin) {
+          _showAdminOptions(context, book);
+        }
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -224,7 +245,7 @@ class _BooksPageState extends State<BooksPage> {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Book title
           Text(
             book.title,
@@ -235,7 +256,7 @@ class _BooksPageState extends State<BooksPage> {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
-          
+
           // Book author
           Text(
             book.author,
@@ -258,4 +279,107 @@ class _BooksPageState extends State<BooksPage> {
       ),
     );
   }
+
+  void _showBookFormDialog(BuildContext context, [Book? book]) {
+    showDialog(
+      context: context,
+      builder: (context) => BookFormDialog(
+        book: book,
+        onSubmit: (title, author, description, coverImage, fileUrl, pageCount, categories, isFeatured) {
+          final now = DateTime.now();
+          if (book == null) {
+            // Add new book with generated ID
+            final newBookId = const Uuid().v4(); // Generate a unique ID
+            context.read<BooksBloc>().add(AddBookEvent(
+              book: Book(
+                id: newBookId, // Use the generated ID
+                title: title,
+                author: author,
+                description: description,
+                coverImage: coverImage,
+                fileUrl: fileUrl,
+                pageCount: pageCount,
+                rating: 0.0, // Default rating for new book
+                categories: categories,
+                isFeatured: isFeatured,
+                publishedDate: now,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            ));
+          } else {
+            // Update existing book
+            context.read<BooksBloc>().add(UpdateBookEvent(
+              book: Book(
+                id: book.id,
+                title: title,
+                author: author,
+                description: description,
+                coverImage: coverImage,
+                fileUrl: fileUrl,
+                pageCount: pageCount,
+                rating: book.rating, // Preserve existing rating
+                categories: categories,
+                isFeatured: isFeatured,
+                publishedDate: book.publishedDate, // Preserve original publish date
+                createdAt: book.createdAt, // Preserve creation date
+                updatedAt: now, // Update the updated timestamp
+              ),
+            ));
+          }
+        },
+      ),
+    );
+  }
+
+  void _showAdminOptions(BuildContext context, Book book) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Edit Book'),
+            onTap: () {
+              Navigator.pop(context);
+              _showBookFormDialog(context, book);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.delete, color: Colors.red),
+            title: const Text('Delete Book', style: TextStyle(color: Colors.red)),
+            onTap: () {
+              Navigator.pop(context);
+              _showDeleteConfirmation(context, book);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Book book) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Book'),
+        content: Text('Are you sure you want to delete "${book.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<BooksBloc>().add(DeleteBookEvent(bookId: book.id));
+              Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
