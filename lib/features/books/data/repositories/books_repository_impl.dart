@@ -42,6 +42,9 @@ class BooksRepositoryImpl implements BooksRepository {
   @override
   Future<Either<Failure, Book>> getBookDetails(String bookId) async {
     try {
+      if (bookId.isEmpty) {
+        return Left(ServerFailure('Invalid book ID: Book ID cannot be empty'));
+      }
       final remoteBook = await remoteDataSource.getBookDetails(bookId);
       await localDataSource.cacheBookDetails(remoteBook);
       return Right(remoteBook);

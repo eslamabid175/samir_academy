@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
@@ -38,13 +39,13 @@ class _BookReaderPageState extends State<BookReaderPage> {
   
   bool _isBookmarksPanelOpen = false;
   bool _isNotesPanelOpen = false;
-
+final _userId= FirebaseAuth.instance.currentUser?.uid?? ''; 
   @override
   void initState() {
     super.initState();
 
     // Get current user ID - in a real app, get this from auth service
-    final userId = 'current_user_id';
+    final userId = _userId;
 
     // Load book details when the page is loaded
     BlocProvider.of<BooksBloc>(context).add(
@@ -63,7 +64,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
 
   void _updateReadingProgress() {
     if (_book != null) {
-      final userId = 'current_user_id';
+      final userId = _userId;
 
       BlocProvider.of<BooksBloc>(context).add(
         UpdateReadingProgressEvent(
@@ -121,7 +122,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  final userId = 'current_user_id';
+                  final userId = FirebaseAuth.instance.currentUser?.uid?? '';
 
                   BlocProvider.of<BooksBloc>(context).add(
                     AddBookmarkEvent(
@@ -200,14 +201,16 @@ class _BookReaderPageState extends State<BookReaderPage> {
             actions: [
               TextButton(
                 onPressed: () {
+
                   Navigator.pop(context);
+
                 },
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
                 onPressed: () {
                   if (content.isNotEmpty) {
-                    final userId = 'current_user_id';
+                    final userId = FirebaseAuth.instance.currentUser?.uid?? '';
 
                     BlocProvider.of<BooksBloc>(context).add(
                       AddNoteEvent(
@@ -280,8 +283,12 @@ class _BookReaderPageState extends State<BookReaderPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+          onPressed: () {
+      BlocProvider.of<BooksBloc>(context).add(GetBooksEvent());
+
+          Navigator.of(context).pop();
+  }
+  ),
         actions: [
           IconButton(
             icon: const Icon(Icons.bookmark_border),
@@ -385,14 +392,17 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // Retry loading the book
-                      final userId = 'current_user_id'; // Replace with actual user ID
+                      // Retry loading t
+                      print("book id from reader= ${widget.bookId}");
+                      final userId = FirebaseAuth.instance.currentUser?.uid ?? ''; // Get current user ID from Firebase Auth
                       BlocProvider.of<BooksBloc>(context).add(
                         GetBookDetailsEvent(
                           userId: userId,
                           bookId: widget.bookId,
+                        
                         ),
                       );
+                      
                     },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
@@ -407,20 +417,19 @@ class _BookReaderPageState extends State<BookReaderPage> {
             );
           } else if (_book != null) {
             return _buildReader();
-          } else {
+          }else if (state is BookDetailsLoadingState) {
+            return CircularProgressIndicator();}
+           else {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'No book details available',
+                children: const [
+                  Text(
+                    'the book is loading..',
                     style: TextStyle(fontSize: 16),
                   ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Go Back'),
-                  ),
+                  SizedBox(height: 16),
+                CircularProgressIndicator(),
                 ],
               ),
             );
@@ -430,6 +439,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
       bottomNavigationBar: _buildBottomBar(),
     );
   }
+  bool _pdfLoadFailed = false;
 
   Widget _buildReader() {
     if (_book == null) return const SizedBox.shrink();
@@ -443,10 +453,13 @@ class _BookReaderPageState extends State<BookReaderPage> {
               SfPdfViewer.network(
                 _book!.fileUrl,
                 key: _pdfViewerKey,
+                
                 controller: _pdfViewerController,
                 onDocumentLoaded: (PdfDocumentLoadedDetails details) {
                   setState(() {
                     _totalPages = details.document.pages.count;
+                                     _pdfLoadFailed = false; // Clear error when loaded
+
                   });
                 },
                 onPageChanged: (PdfPageChangedDetails details) {
@@ -456,6 +469,9 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   _updateReadingProgress();
                 },
                 onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+                   setState(() {
+                    _pdfLoadFailed = true;
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error loading PDF: ${details.error}'),
@@ -471,9 +487,33 @@ class _BookReaderPageState extends State<BookReaderPage> {
                 pageSpacing: 0,
                 canShowPasswordDialog: true,
               ),
-
+       if (_pdfLoadFailed)
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Failed to load PDF file',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _pdfLoadFailed = false;
+                          });
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
               // Loading indicator
-              FutureBuilder<bool>(
+     /*         FutureBuilder<bool>(
                 future: PdfUtils.checkPdfUrl(_book!.fileUrl),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -505,7 +545,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                   }
                   return const SizedBox.shrink();
                 },
-              ),
+              ), */
             ],
           ),
         ),
@@ -559,7 +599,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
                                 trailing: IconButton(
                                   icon: const Icon(Icons.delete_outline),
                                   onPressed: () {
-                                    final userId = 'current_user_id';
+                                    final userId = _userId;
                                     BlocProvider.of<BooksBloc>(context).add(
                                       RemoveBookmarkEvent(
                                         userId: userId,
@@ -598,7 +638,7 @@ class _BookReaderPageState extends State<BookReaderPage> {
               currentPage: _currentPage,
               onAddNote: _addNote,
               onDeleteNote: (noteId) {
-                final userId = 'current_user_id';
+                final userId = _userId;
                 BlocProvider.of<BooksBloc>(context).add(
                   RemoveNoteEvent(
                     userId: userId,

@@ -37,30 +37,37 @@ class BooksRemoteDataSourceImpl implements BooksRemoteDataSource {
       final booksSnapshot = await firestore
           .collection(AppConstants.booksCollection)
           .get();
-      
       return booksSnapshot.docs
-          .map((doc) => BookModel.fromJson(doc.data()))
+          .map((doc) {
+            final data = doc.data();
+            // Always use the Firestore document ID as the book's id
+            return BookModel.fromJson({...data, 'id': doc.id});
+          })
           .toList();
     } catch (e) {
-      throw ServerFailure( e.toString());
+      throw ServerFailure(e.toString());
     }
   }
 
   @override
   Future<BookModel> getBookDetails(String bookId) async {
     try {
+      print('Fetching book with ID: $bookId');
       final bookDoc = await firestore
           .collection(AppConstants.booksCollection)
           .doc(bookId)
           .get();
-      
+
+      print('Document exists: ${bookDoc.exists}');
       if (!bookDoc.exists) {
-        throw ServerFailure(  'Book not found');
+        throw ServerFailure('Book not found');
       }
-      
-      return BookModel.fromJson(bookDoc.data()!);
+
+      // Use the Firestore document ID as the book's id
+      return BookModel.fromJson({...bookDoc.data()!, 'id': bookDoc.id});
     } catch (e) {
-      throw ServerFailure(  e.toString());
+      print('Error fetching book: $e');
+      throw ServerFailure(e.toString());
     }
   }
 
@@ -206,10 +213,11 @@ class BooksRemoteDataSourceImpl implements BooksRemoteDataSource {
   @override
   Future<BookModel> addBook(BookModel book) async {
     try {
+      // Add the book without an id, Firestore will generate one
       final docRef = await firestore
           .collection(AppConstants.booksCollection)
           .add(book.toJson());
-
+      // Return the book with the Firestore-generated ID
       return book.copyWith(id: docRef.id);
     } catch (e) {
       throw ServerFailure(e.toString());

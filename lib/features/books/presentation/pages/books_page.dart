@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flutter/widgets.dart';
 import '../../../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../widgets/book_form_dialog.dart';  // Add this import
 
@@ -17,13 +18,15 @@ class BooksPage extends StatefulWidget {
   State<BooksPage> createState() => _BooksPageState();
 }
 
-class _BooksPageState extends State<BooksPage> {
+class _BooksPageState extends State<BooksPage>  {
+
   @override
   void initState() {
     super.initState();
     // Fetch books when the page is loaded
     BlocProvider.of<BooksBloc>(context).add(GetBooksEvent());
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -272,12 +275,22 @@ class _BooksPageState extends State<BooksPage> {
   }
 
   void _navigateToBookReader(Book book) {
+      print('Navigating to book with ID: ${book.id}');
+      if (book.id.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Invalid book ID')),
+      );
+      return;
+    }
+    
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => BookReaderPage(bookId: book.id),
+        builder: (context) => BookReaderPage(bookId: book.id) ,
       ),
     );
+        BlocProvider.of<BooksBloc>(context).add(GetBooksEvent());
+
   }
 
   void _showBookFormDialog(BuildContext context, [Book? book]) {
